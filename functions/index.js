@@ -29,7 +29,9 @@ var mailgun = require("mailgun-js")({
 // Firebase Setup
 const admin = require("firebase-admin");
 
-var serviceAccount = require("./globalnl-members-service-account.json");
+var serviceAccount = require('./' + process.env.GCLOUD_PROJECT + '-service-account.json'); //Automated version
+//var serviceAccount = require('./globalnl-database-test-service-account.json');
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: `https://${process.env.GCLOUD_PROJECT}.firebaseio.com`
@@ -144,13 +146,21 @@ Reply to this email to respond, your email address will be viewable by the recip
 function linkedInClient() {
   // LinkedIn OAuth 2 setup
   // TODO: Configure the `linkedin.client_id` and `linkedin.client_secret` Google Cloud environment variables.
-  return require("node-linkedin")(
-    functions.config().linkedin.client_id,
-    functions.config().linkedin.client_secret,
-    `https://members.globalnl.com/login.html`
-  );
-  //`https://globalnl-members.firebaseapp.com/login.html`);
-  //`https://memberstest.globalnl.com/login.html`);
+
+// Determines which project is being used and sets callback url accordingly
+let callbackUrl = `https://members.globalnl.com/login.html`;
+ if(process.env.GCLOUD_PROJECT == 'globalnl-members'){
+ }
+ else if(process.env.GCLOUD_PROJECT == 'globalnl-database-test'){
+   callbackUrl = `https://memberstest.globalnl.com/login.html`;
+ }
+ else{
+   console.log('Unexpected Firebase Project ID for LinkedIn callback URL: ' + process.env.GCLOUD_PROJECT);
+ }
+ return require("node-linkedin")(
+   functions.config().linkedin.client_id,
+   functions.config().linkedin.client_secret,
+   callbackUrl);
 }
 
 /**
@@ -424,7 +434,7 @@ function sendWelcomeEmail(email, displayName) {
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Welcome to Global NL</title>
-        
+
     <style type="text/css">
 		p{
 			margin:10px 0;
@@ -831,11 +841,11 @@ function sendWelcomeEmail(email, displayName) {
                     <table align="left" width="100%" border="0" cellpadding="0" cellspacing="0" class="mcnImageContentContainer" style="min-width: 100%;border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                         <tbody><tr>
                             <td class="mcnImageContent" valign="top" style="padding-right: 9px;padding-left: 9px;padding-top: 0;padding-bottom: 0;text-align: center;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                                
+
                                     <a href="www.globalnl.com" title="" class="" target="_blank" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                                         <img align="center" alt="" src="https://gallery.mailchimp.com/bcd3fbb1ca02cfc018e5cf6ea/images/e6e2e4bb-1c9c-4531-8893-ca9edb7b1912.jpg" width="564" style="max-width: 1023px;padding-bottom: 0;display: inline !important;vertical-align: bottom;border: 0;height: auto;outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;" class="mcnImage">
                                     </a>
-                                
+
                             </td>
                         </tr>
                     </tbody></table>
@@ -853,7 +863,7 @@ function sendWelcomeEmail(email, displayName) {
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
@@ -868,15 +878,15 @@ function sendWelcomeEmail(email, displayName) {
 				<table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
 				<tr>
 				<![endif]-->
-			    
+
 				<!--[if mso]>
 				<td valign="top" width="600" style="width:600px;">
 				<![endif]-->
                 <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width: 100%;min-width: 100%;border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;" width="100%" class="mcnTextContentContainer">
                     <tbody><tr>
-                        
+
                         <td valign="top" class="mcnTextContent" style="padding-top: 0;padding-right: 18px;padding-bottom: 9px;padding-left: 18px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;word-break: break-word;color: #202020;font-family: Helvetica;font-size: 16px;line-height: 150%;text-align: left;">
-                        
+
                             Welcome ${displayName || ""}!<br>
 <br>
 Thanks for showing interest in GlobalNL. The 4 steps outlined below will provide access to the tools that the community of volunteers are using to build and grow GlobalNL.  If you have any questions or issues, please reach out to connect@globalnl.com. <br>
@@ -888,7 +898,7 @@ We need people like you to take this initiative to the next level; thanks again 
 				<!--[if mso]>
 				</td>
 				<![endif]-->
-                
+
 				<!--[if mso]>
 				</tr>
 				</table>
@@ -910,7 +920,7 @@ We need people like you to take this initiative to the next level; thanks again 
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
@@ -921,7 +931,7 @@ We need people like you to take this initiative to the next level; thanks again 
     <tbody class="mcnCaptionBlockOuter">
         <tr>
             <td class="mcnCaptionBlockInner" valign="top" style="padding: 9px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                
+
 
 <table border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftContentOuter" width="100%" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
     <tbody><tr>
@@ -929,11 +939,11 @@ We need people like you to take this initiative to the next level; thanks again 
             <table align="right" border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftImageContentContainer" width="264" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                 <tbody><tr>
                     <td class="mcnCaptionLeftImageContent" align="center" valign="top" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                    
-                        
+
+
                         <img alt="" src="https://gallery.mailchimp.com/bcd3fbb1ca02cfc018e5cf6ea/images/b1e0d820-3dd4-4c3d-b8af-b5ec7e777e32.jpg" width="162" style="max-width: 162px;border: 0;height: auto;outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;vertical-align: bottom;" class="mcnImage">
-                        
-                    
+
+
                     </td>
                 </tr>
             </tbody></table>
@@ -969,7 +979,7 @@ Pick a project or team <br>
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
@@ -980,7 +990,7 @@ Pick a project or team <br>
     <tbody class="mcnCaptionBlockOuter">
         <tr>
             <td class="mcnCaptionBlockInner" valign="top" style="padding: 9px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                
+
 
 <table border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftContentOuter" width="100%" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
     <tbody><tr>
@@ -988,11 +998,11 @@ Pick a project or team <br>
             <table align="right" border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftImageContentContainer" width="264" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                 <tbody><tr>
                     <td class="mcnCaptionLeftImageContent" align="center" valign="top" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                    
-                        
+
+
                         <img alt="" src="https://gallery.mailchimp.com/bcd3fbb1ca02cfc018e5cf6ea/images/45643b02-4e5d-4881-bdd0-355d556b8d16.png" width="127" style="max-width: 127px;border: 0;height: auto;outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;vertical-align: bottom;" class="mcnImage">
-                        
-                    
+
+
                     </td>
                 </tr>
             </tbody></table>
@@ -1027,7 +1037,7 @@ Join GlobalNL Slack <br>
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
@@ -1038,7 +1048,7 @@ Join GlobalNL Slack <br>
     <tbody class="mcnCaptionBlockOuter">
         <tr>
             <td class="mcnCaptionBlockInner" valign="top" style="padding: 9px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                
+
 
 <table border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftContentOuter" width="100%" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
     <tbody><tr>
@@ -1046,11 +1056,11 @@ Join GlobalNL Slack <br>
             <table align="right" border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftImageContentContainer" width="264" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                 <tbody><tr>
                     <td class="mcnCaptionLeftImageContent" align="center" valign="top" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                    
-                        
+
+
                         <img alt="" src="https://gallery.mailchimp.com/bcd3fbb1ca02cfc018e5cf6ea/images/ad0eb37b-df73-429b-ad74-3b9e4f95a1a8.jpg" width="127" style="max-width: 127px;border: 0;height: auto;outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;vertical-align: bottom;" class="mcnImage">
-                        
-                    
+
+
                     </td>
                 </tr>
             </tbody></table>
@@ -1060,7 +1070,7 @@ Join GlobalNL Slack <br>
                         <span style="font-size:24px"><strong>Step 3</strong><br>
 Access GlobalNL Resources <br>
 <a href="https://drive.google.com/open?id=0B7oMeS0UmQ5sVVZCdnJuSTlBXzA" target="_blank" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;color: #2BAADF;font-weight: normal;text-decoration: underline;">Click here</a></span><br>
- 
+
                     </td>
                 </tr>
             </tbody></table>
@@ -1086,7 +1096,7 @@ Access GlobalNL Resources <br>
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
@@ -1097,7 +1107,7 @@ Access GlobalNL Resources <br>
     <tbody class="mcnCaptionBlockOuter">
         <tr>
             <td class="mcnCaptionBlockInner" valign="top" style="padding: 9px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                
+
 
 <table border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftContentOuter" width="100%" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
     <tbody><tr>
@@ -1105,11 +1115,11 @@ Access GlobalNL Resources <br>
             <table align="right" border="0" cellpadding="0" cellspacing="0" class="mcnCaptionLeftImageContentContainer" width="264" style="border-collapse: collapse;mso-table-lspace: 0pt;mso-table-rspace: 0pt;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
                 <tbody><tr>
                     <td class="mcnCaptionLeftImageContent" align="center" valign="top" style="mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;">
-                    
-                        
+
+
                         <img alt="" src="https://gallery.mailchimp.com/bcd3fbb1ca02cfc018e5cf6ea/images/a559110b-290a-4e00-8467-7655c1f1512c.jpg" width="134" style="max-width: 134px;border: 0;height: auto;outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;vertical-align: bottom;" class="mcnImage">
-                        
-                    
+
+
                     </td>
                 </tr>
             </tbody></table>
@@ -1144,7 +1154,7 @@ Track team meetings and events<br>
                         </td>
                     </tr>
                 </tbody></table>
-<!--            
+<!--
                 <td class="mcnDividerBlockInner" style="padding: 18px;">
                 <hr class="mcnDividerContent" style="border-bottom-color:none; border-left-color:none; border-right-color:none; border-bottom-width:0; border-left-width:0; border-right-width:0; margin-top:0; margin-right:0; margin-bottom:0; margin-left:0;" />
 -->
