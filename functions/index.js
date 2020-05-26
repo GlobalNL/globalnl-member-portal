@@ -26,6 +26,11 @@ var mailgun = require("mailgun-js")({
   domain: "mail.globalnl.com"
 });
 
+//Mailchimp Setup
+const mailchimpKey = functions.config().mailchimp.key;
+const Mailchimp = require('mailchimp-api-v3')
+const mailchimp = new Mailchimp(mailchimpKey);
+
 // Firebase Setup
 const admin = require("firebase-admin");
 
@@ -51,11 +56,24 @@ var private_data = {};
 exports.sendWelcomeEmail = functions.auth.user().onCreate(user => {
   const email = user.email; // The email of the user.
   const displayName = user.displayName; // The display name of the user.
-  try {
-    return sendWelcomeEmail(email, displayName);
-  } catch (err) {
-    console.error(err);
-  }
+  var promiseArray = [];
+  promiseArray.push(sendWelcomeEmail(email, displayName));
+  promiseArray.push(mailchimp.post(
+			'/lists/9efe26440a/members',
+			{
+				email_address: email,
+				status: 'subscribed',
+				merge_fields:{FNAME: displayName}
+			}
+			)
+			.then((response)=>{
+				console.log(email + ' added to Mailchimp');
+				console.log(response);
+			}));
+    return Promise.all(promiseArray)
+	.catch(err => {
+		console.error(err);
+	});
 });
 
 exports.sendMessageToUser = functions.https.onCall((data, context) => {
