@@ -436,12 +436,12 @@ function sendWelcomeEmail(email, displayName) {
     subject: `GlobalNL New Member Signup`
   };
 
-  mailOptions.text = displayName + " (" + email + ") has signed up at members.globalnl.com"
+  mailOptions.text = displayName + " (" + email + ") has signed up at members.globalnl.com";
 
   return mailgun
     .messages()
     .send(mailOptions)
     .then(() => {
-      return console.log("New welcome email sent to:", email);
+      return console.log("New member signup email notification sent to GlobalNL: " + displayName + " (" + email + ")");
     });
 }
