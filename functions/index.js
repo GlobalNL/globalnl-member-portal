@@ -34,7 +34,9 @@ const mailchimp = new Mailchimp(mailchimpKey);
 // Firebase Setup
 const admin = require("firebase-admin");
 
+
 var serviceAccount = require(`./${functions.config().project.name}-service-account.json`);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: `https://${functions.config().project.name}.firebaseio.com`
@@ -163,6 +165,7 @@ function linkedInClient() {
   // LinkedIn OAuth 2 setup
   // TODO: Configure the `linkedin.client_id` and `linkedin.client_secret` Google Cloud environment variables.
   // Determines which project is being used and sets callback url accordingly
+
   let callbackUrl = "https://members.globalnl.com/login.html";
   if (functions.config().project.name == "globalnl-members") {
   }
@@ -172,6 +175,7 @@ function linkedInClient() {
   else {
     console.log("project id is invalid: " + functions.config().project.name);
   }
+
  return require("node-linkedin")(
    functions.config().linkedin.client_id,
    functions.config().linkedin.client_secret,
