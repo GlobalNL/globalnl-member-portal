@@ -104,7 +104,7 @@ $("#cancelButton").click(function() {
 });
 
 // form submit callback
-$("#profile_form").submit(function(event) {
+$("#submitButton").click(function(event) {
   // prevent navigation out of page
   event.preventDefault();
   /* Store known fields into member objcet
@@ -338,6 +338,43 @@ function initApp() {
     });
 }
 
+
+//highlights any text in the LI link form
+$('#linkedin').on("click", function () {
+   $(this).select();
+});
+
+
+// LI link modal stuff
+
+var modal = document.getElementById("LImodal");
+// Open the modal
+$("#LImodal_btn").click(function() {
+  //modal.style.display = "block";
+  $('#LImodal').show();
+});
+// Close the modal with the x
+$("#LImodal_exit").click(function() {
+  //modal.style.display = "none";
+  $('#LImodal').hide();
+});
+// Close the modal when user clicks outside of it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    //modal.style.display = "none";
+    $('#LImodal').hide();
+  }
+}
+// Profile link in the modal
+$("#LI_btnprofile").click(function() {
+  window.open("https://www.linkedin.com/public-profile/settings", "_blank"); // Redirect to the profile
+  //modal.style.display = "none";
+  $('#LImodal').hide(); //close modal
+  $('#linkedin').focus(); //focus on LI link form
+  $('#linkedin').on("focus", function () {
+     $(this).select(); // Selects any text in the form
+  });
+});
 /*****************************************************
  * Utility Functions, only referenced in this file
  *****************************************************/
