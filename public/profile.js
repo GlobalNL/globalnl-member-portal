@@ -340,40 +340,34 @@ function initApp() {
 
 
 //highlights any text in the LI link form
-$('#linkedin').on("click", function () {
+$('#linkedin').on("focus", function () {
    $(this).select();
 });
 
 
 // LI link modal stuff
 
-var modal = document.getElementById("LImodal");
 // Open the modal
 $("#LImodal_btn").click(function() {
-  //modal.style.display = "block";
   $('#LImodal').show();
 });
 // Close the modal with the x
 $("#LImodal_exit").click(function() {
-  //modal.style.display = "none";
   $('#LImodal').hide();
 });
 // Close the modal when user clicks outside of it
 window.onclick = function(event) {
   if (event.target == modal) {
-    //modal.style.display = "none";
     $('#LImodal').hide();
   }
 }
 // Profile link in the modal
 $("#LI_btnprofile").click(function() {
-  window.open("https://www.linkedin.com/public-profile/settings", "_blank"); // Redirect to the profile
-  //modal.style.display = "none";
-  $('#LImodal').hide(); //close modal
-  $('#linkedin').focus(); //focus on LI link form
-  $('#linkedin').on("focus", function () {
-     $(this).select(); // Selects any text in the form
-  });
+  if(confirm('Click OK to open LinkedIn in a new window.\nCopy your profile URL and return here to paste.')){
+    window.open("https://www.linkedin.com/public-profile/settings", "_blank"); // Redirect to the profile
+    $('#LImodal').hide(); //close modal
+    $('#linkedin').focus(); //focus on LI link form
+  }
 });
 /*****************************************************
  * Utility Functions, only referenced in this file
