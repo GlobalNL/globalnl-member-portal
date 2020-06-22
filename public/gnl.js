@@ -60,7 +60,7 @@ window.gnl = (function() {
     <a class="nav-link" href="#"><span class="fas fa-globalnl fa-user"></span><span id="login_name"></span></a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="profile.html" onclick="adminUidReset()"><span class="fas fa-globalnl fa-user-edit"></span><span>Edit profile</span></a>
+    <a class="nav-link" href="profile.html" onclick="adminUidReset();"><span class="fas fa-globalnl fa-user-edit"></span><span>Edit profile</span></a>
   </li>
   <li id="button_logout" class="nav-item">
     <a class="nav-link" href="#"><span class="fas fa-globalnl fa-sign-out-alt"></span><span>Logout</span></a>
