@@ -5,6 +5,7 @@
 var uid;
 var memberDocRef;
 var privateDocRef;
+var isMod;
 // For storing current location and hometown from Google Maps
 var locationArray = {};
 
@@ -23,7 +24,18 @@ $(document).ready(function() {});
 
 function renderWithUser(user) {
   $("#mainPage").show();
-  uid = user.uid;
+  var sessionStorageUid = sessionStorage.getItem("uid");
+  // check if user has admin permissions
+  firebase.firestore().collection("moderators").doc(firebase.auth().currentUser.uid).get().then(doc => {
+    isMod = doc.data().moderator;
+  });
+  if ((isMod == true) || (sessionStorageUid !== null)) {
+      uid = sessionStorage.getItem("uid");
+    }
+  else {
+    uid = user.uid;
+  }
+
   memberDocRef = firebase
     .firestore()
     .collection("members")
@@ -32,7 +44,7 @@ function renderWithUser(user) {
     .firestore()
     .collection("private_data")
     .doc(uid);
-  $("#display_name").val(user.displayName);
+  //$("#display_name").val(user.displayName);
   initApp();
 }
 
@@ -99,14 +111,14 @@ function initAutocomplete() {
 }
 
 $("#cancelButton").click(function() {
-  event.preventDefault();
+  //event.preventDefault();
   window.location.replace("index.html");
 });
 
 // form submit callback
 $("#submitButton").click(function(event) {
   // prevent navigation out of page
-  event.preventDefault();
+  //event.preventDefault();
   /* Store known fields into member objcet
     */
   //  var memberGeo = {
@@ -114,7 +126,7 @@ $("#submitButton").click(function(event) {
   var member = {};
   member.display_name = $("#display_name").val();
   member.MUN = $("#MUN").val();
-  member.MUN.logo = "";
+  //member.MUN.logo = "";
   member.privacy = $("input[name=privacy]:checked").val();
   member.date_updated = Date.now();
   // Conditional reads
@@ -157,7 +169,7 @@ $("#submitButton").click(function(event) {
     support: document.getElementById("support").checked
   };
 
-  private_data.comments = $("#comments").text();
+  private_data.comments = $("#comments").val();
 
   const memberDatabaseTask = memberDocRef
     .set(member, { merge: true })
@@ -196,8 +208,21 @@ function initApp() {
       if (!doc.exists) {
         console.log("No such document!");
       } else {
-        userData = doc.data();
+        var userData = doc.data();
         //console.log(userData);
+
+        // Shows display name for new users and sets it in the database
+        if (typeof userData["display_name"] === "undefined"){
+          let newDisplayName = userData["first_name"] + " " + userData["last_name"]
+          $("#display_name").val(newDisplayName);
+          firebase.firestore().collection("members").doc(doc.id).update({
+            display_name: newDisplayName
+          });
+        }
+        else{
+          $("#display_name").val(userData["display_name"]);
+        }
+
         if (!userData["date_updated"]) {
           $("#alertbox").html(
             "Welcome to Global NL!<br/>We're looking forward to getting to know you better. Please complete your profile below."
@@ -317,7 +342,7 @@ function initApp() {
       if (!doc.exists) {
         console.log("No such document!");
       } else {
-        userData = doc.data();
+        var userData = doc.data();
         // Iterate over interests and check respective fields
         if (userData["interests"] != null) {
           for (const [interest, value] of Object.entries(userData.interests)) {
@@ -357,7 +382,7 @@ $("#LImodal_exit").click(function() {
 });
 // Close the modal when user clicks outside of it
 window.onclick = function(event) {
-  if (event.target == modal) {
+  if (event.target == $('#LImodal')) {
     $('#LImodal').hide();
   }
 }
