@@ -64,6 +64,9 @@ body {
   #linkedin_nav {
     display: none;
   }
+  #adminEditToggle {
+    display: none;
+  }
   #display_name_label {
     display: none;
   }
@@ -355,6 +358,6 @@ input:checked + .slider:before {
   margin-bottom: 0.5rem;
 }
 
-.adminToggle {
+#adminEditToggle {
   display: none;
 }

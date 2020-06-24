@@ -818,7 +818,7 @@ function memberSearch() {
     } else if (formStatic["hometown"]["city"]) {
       console.log("Town entered");
       fbi
-        .orderBy("last_name")
+        .orderBy("random")
         .startAfter(last_read_doc)
         .where(
           "hometown_address.locality",
@@ -1037,46 +1037,41 @@ function initAutocomplete() {
 
 // determines whether to show the admin button based on the admin toggle status
 function showAdminButton() {
-  var eachDoc = document.getElementsByClassName("adminButton");
-  var i;
   // checks toggle status in sessionStorage for reload situations
-  //Keeps buttons shown if page is refreshed, search is made, etc.
+  //Keeps edit buttons shown if page is refreshed, search is made, etc.
   if ((sessionStorage.getItem("adminToggle")) == "true") {
     $("#adminToggleState").prop("checked", true); // sets the toggle to be on after refresh if it was on before
-    for (i = 0; i < eachDoc.length; i++) {
-      eachDoc[i].style.display = "block";
-    }
+    $('.adminButton').show();
   }
   // checks toggle status when it is changed and adjusts buttons accordingly
   $("#adminToggleState").change(function() {
     if ($("#adminToggleState:checked").val() == "on") {
       sessionStorage.setItem("adminToggle", true);
-      for (i = 0; i < eachDoc.length; i++) {
-        eachDoc[i].style.display = "block";
-      }
+      $('.adminButton').show();
     }
     else {
       sessionStorage.setItem("adminToggle", false);
-      for (i = 0; i < eachDoc.length; i++) {
-        eachDoc[i].style.display = "none";
-      }
+      $('.adminButton').hide();
     }
   });
 }
 
 // redirect to edit profile page from the admin buttons
 function adminRedirect() {
-        sessionStorage.setItem("uid", event.target.id);
-        window.open("/profile.html", "_blank");
+  sessionStorage.setItem("uid", event.target.id);
+  window.open("/profile.html", "_blank");
 }
 
 // Shows toggle for admins to see edit profile buttons
 function showAdminToggle() {
   firebase.firestore().collection("moderators").doc(firebase.auth().currentUser.uid).get().then(doc => {
-    var isMod = doc.data().moderator;
-    if (isMod == true) {
-      document.getElementById("adminEditToggle").style.display = "block";
+    // Show the admin toggle if moderator=true for the user
+    if (doc.data().moderator) {
+      $("#adminEditToggle").show();
     }
+  })
+  .catch(error => {
+    console.log("User is not an admin");
   });
 }
 
