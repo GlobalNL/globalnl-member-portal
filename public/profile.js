@@ -305,7 +305,6 @@ $("#submitButton").click(function(event) {
     if (member.company_logo && !/ghost/gi.test(member.company_logo)) {
       uploadCompanyLogo = uploadCompanyLogoOnFirebaseStorage(member.company_logo);
     }
-
     return Promise.all([memberDatabaseTask, privateDatabaseTask, uploadPhoto, uploadCompanyLogo]).then(() => {
       if (adminEdit === false) { // update user account photoURL
         // Create a reference to the file we want to download

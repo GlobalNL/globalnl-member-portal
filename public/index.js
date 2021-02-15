@@ -356,6 +356,7 @@ function initLoad() {
                 console.log("Profile Pic does not exist in the storage. Default photo will be used user account photoURL");
               });
             }
+
         } else {
             var profileLink = doc.data().linkedin_profile;
             var vanityName = profileLink.substring(profileLink.indexOf('/in/')+4).replace('/','');
