@@ -28,9 +28,9 @@ var mailgun = require("mailgun-js")({
 
 //Mailchimp Setup
 const mailchimpKey = functions.config().mailchimp.key;
+const mailchimpListID = functions.config().mailchimp.list_id;
 const Mailchimp = require('mailchimp-api-v3')
 const mailchimp = new Mailchimp(mailchimpKey);
-const mailchimpListID = functions.config().mailchimp.list_id;
 
 // Firebase Setup
 const admin = require("firebase-admin");
