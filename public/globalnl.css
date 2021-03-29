@@ -72,6 +72,12 @@ body {
   }
 }
 
+@media only screen and (min-width: 450px) {
+  .card-gnl {
+  width: 364px !important;
+  }
+}
+
 @media only screen and (max-width: 768px) {
   #sign-in-button {
     width: 234px;
@@ -122,7 +128,6 @@ body {
 }
 
 .card-gnl {
-  width: 364px !important;
   min-width: 364px !important;
   min-height: 0px;
   margin: 0px;
@@ -157,6 +162,10 @@ body {
 
 .card-body-bio {
   padding-top: 1rem;
+}
+
+.card-profile-title {
+  padding-right: 60px;
 }
 
 .card-title {
@@ -240,6 +249,11 @@ body {
   width: 38px;
 }
 
+.munLogoAdder {
+  position: absolute; 
+  right: 10px; 
+  top: 5px;
+}
 
 /* LinkedIn On/Off toggle button */
 

@@ -23,7 +23,7 @@ const crypto = require("crypto");
 const mailgunKey = functions.config().mailgun.key;
 var mailgun = require("mailgun-js")({
   apiKey: mailgunKey,
-  domain: "mail.globalnl.com"
+  domain: "email.globalnl.com"
 });
 
 //Mailchimp Setup
@@ -359,7 +359,7 @@ function createFirebaseAccount(uid, displayName, photoURL, email) {
 function sendWelcomeEmail(email, displayName) {
   const mailOptions = {
     from: `Global NL <connect@globalnl.com>`,
-    to: `globalnlnetwork@gmail.com`,
+    to: `connect@globalnl.com`,
     subject: `GlobalNL New Member Signup`
   };
 

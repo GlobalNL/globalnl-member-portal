@@ -707,65 +707,13 @@ function loadMembers(querySnapshot) {
 	<div class="card-header card-header-gnl">
   <span class="fas fa-gnl-head">
   <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-  <div style="width: 195px">
+  <div class="card-profile-title">
   ${firstName} ${lastName}
   <div class="card-header-headline">
   ${memberFields.headline}</div>
   </div>
   </div>
-	<div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
-	</div>
-	<div class="card-body card-body-gnl">
-    <h5 class="card-title"><span class="fas fa-globalnl"><img id="${memberFields.public_uid}_companyLogo" style="width: 100%" src="${companyLogo}"></span>${
-      memberFields.company
-    }</h5>
-    <h5 class="card-title card-title-undercompany"><span class="fas fa-globalnl fa-industry"></span>${
-      cardIndustry
-    }</h5>
-    <h5 class="card-title"><span class="fas fa-globalnl fa-map-marker-alt"></span>${
-      memberFields.currentAddress
-    }</h5>
-    <h5 class="card-title"><span class="fas fa-globalnl fa-anchor"></span>${
-      memberFields.hometown
-    }</h5>
-    <h5 class="card-title"><table><tr>
-    <td class="fas fa-globalnl fa-info-circle"></td>
-    <td style="padding-right:0.5rem"> ${memberFields.bio}</td>
-    </tr></table></h5>
-    <h5 class="card-title"><span class="fab fa-globalnl fa-linkedin-in" style="margin-right: 0rem"></span>
-    <a href="${memberFields.linkedin_profile}" target="___blank">View LinkedIn Profile</a>
-    </h5>
-    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
-  </div>
-</div>
-</div>`;
-        console.log(
-          "Loaded profile: " +
-            firstName +
-            "  -  " +
-            data.linkedin_profile +
-            "  -  " +
-            doc.id
-        );
-      }
-      else if (
-        memberFields.company &&
-        memberFields.linkedin_profile
-      ) {
-        showAdminButton();
-        memberDomString = `<div class="col-auto p-1 card-col">
-<div class="card card-gnl">
-	<div>
-	<div class="card-header card-header-gnl">
-  <span class="fas fa-gnl-head">
-  <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-  <div style="width: 195px">
-  ${firstName} ${lastName}
-  <div class="card-header-headline">
-  ${memberFields.headline}</div>
-  </div>
-  </div>
-	<div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+	<div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
 	</div>
 	<div class="card-body card-body-gnl">
     <h5 class="card-title"><span class="fas fa-globalnl"><img id="${memberFields.public_uid}_companyLogo" style="width: 100%" src="${companyLogo}"></span>${
@@ -807,13 +755,13 @@ function loadMembers(querySnapshot) {
       <div class="card-header card-header-gnl">
       <span class="fas fa-gnl-head">
       <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-      <div style="width: 195px">
+      <div class="card-profile-title">
       ${firstName} ${lastName}
       <div class="card-header-headline">
       ${memberFields.headline}</div>
       </div>
       </div>
-      <div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+      <div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
       </div>
       <div class="card-body card-body-gnl">
       <h5 class="card-title"><span class="fas fa-globalnl fa-industry"></span>${
@@ -855,13 +803,13 @@ function loadMembers(querySnapshot) {
       <div class="card-header card-header-gnl">
       <span class="fas fa-gnl-head">
       <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-      <div style="width: 195px">
+      <div class="card-profile-title">
       ${firstName} ${lastName}
       <div class="card-header-headline">
       ${memberFields.headline}</div>
       </div>
       </div>
-      <div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+      <div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
       </div>
       <div class="card-body card-body-gnl">
       <h5 class="card-title"><span class="fas fa-globalnl fa-industry"></span>${
@@ -899,13 +847,13 @@ function loadMembers(querySnapshot) {
       <div class="card-header card-header-gnl">
       <span class="fas fa-gnl-head">
       <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-      <div style="width: 195px">
+      <div class="card-profile-title">
       ${firstName} ${lastName}
       <div class="card-header-headline">
       ${memberFields.headline}</div>
       </div>
       </div>
-      <div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+      <div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
       </div>
       <div class="card-body card-body-gnl">
       <h5 class="card-title"><span class="fas fa-globalnl fa-industry"></span>${
@@ -940,13 +888,13 @@ function loadMembers(querySnapshot) {
 	<div class="card-header card-header-gnl">
   <span class="fas fa-gnl-head">
   <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
-  <div style="width: 195px">
+  <div class="card-profile-title">
   ${firstName} ${lastName}
   <div class="card-header-headline">
   ${memberFields.headline}</div>
   </div>
   </div>
-	<div class="munLogoAdder" style="position: absolute; right: 10px; top: 5px; visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+	<div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
 	</div>
 	<div class="card-body card-body-gnl">
     <h5 class="card-title"><span class="fas fa-globalnl fa-industry"></span>${
