@@ -34,7 +34,31 @@ function renderWithUser(user) {
   $("#members-list").empty();
   $("#mainPage").show();  
   $('#loginModal').modal("hide"); // login modal for mobile app users when they tap send message without signing in
-  initLoad();
+  if (getUrlParameter('profile')) {
+    var profileID = getUrlParameter('profile');
+    var memberDocRef = fbi.doc(profileID);
+    memberDocRef
+      .get()
+      .then(doc => {
+        if (!doc.exists) {
+          console.log("User does not exist in database");
+          window.location.replace('index.html');
+        } else {          
+          fbi
+          .where(firebase.firestore.FieldPath.documentId(), '==', profileID)
+          .limit(1)
+          .get()
+          .then(function(querySnapshot) {
+            loadMembers(querySnapshot, true);
+          });
+        }
+      })
+      .catch(err => {
+        console.log("Error getting document", err);
+      });
+  } else {    
+    initLoad();
+  }
   showAdminToggle();
 }
 
@@ -47,8 +71,38 @@ function renderWithoutUser() {
       $(".clear_button").click(); // load members when mobile app users visit index.html even without signing in
     });
   } else { // not mobile app
-    $("#members-list").empty();
-    $("#mainPage").hide();
+    if (getUrlParameter('profile')) {
+      $("#members-list").empty();
+      $("#loginPage").hide();
+      $("#mainPage").show();
+      var profileID = getUrlParameter('profile');
+      var memberDocRef = fbi.doc(profileID);
+      memberDocRef
+        .get()
+        .then(doc => {
+          if (!doc.exists) {
+            console.log("User does not exist in database");
+            window.location.replace('index.html');
+          } else {          
+            fbi
+            .where("privacy", "==", "public")
+            .where(firebase.firestore.FieldPath.documentId(), '==', profileID)
+            .limit(1)
+            .get()
+            .then(function(querySnapshot) {
+              loadMembers(querySnapshot, true);
+            });
+          }
+        })
+        .catch(err => {
+          console.log("Error getting document", err);          
+          $("#mainPage").hide();
+          $("#loginPage").show();
+        });
+    } else {    
+      $("#members-list").empty();
+      $("#mainPage").hide();
+    }
   }
 }
 
@@ -131,8 +185,7 @@ function createSendAMessageForm(id, toDisplayName, fromEmailAddress) {
  * Register event callbacks & implement element callbacks
  ******************************************************/
 // Init auth on load web page event
-$(document).ready(function() {          
-  $("#LIbadge").hide();
+$(document).ready(function() {
   $("#preloader").hide();
   if (navigator.userAgent.indexOf('gonative') > -1) { // for mobile app
     $('.navbar-brand').attr('href', '#'); // so that tapping GlobalNL logo does not redirect anywhere
@@ -469,99 +522,29 @@ function initLoad() {
                 console.log("Profile Pic does not exist in the storage. Default photo will be used user account photoURL");
               });
             }
-
         } else {
-            var profileLink = doc.data().linkedin_profile;
-            var vanityName = profileLink.substring(profileLink.indexOf('/in/')+4).replace('/','');
-            var photoURL, companyName, companyLogo;
-
-            $("#LIbadge").html(`<div class='LI-profile-badge'  data-version='v1' data-size='large' data-locale='en_US' data-type='horizontal' data-theme='light' data-vanity='${vanityName}'><a class='LI-simple-link' style='display: none' href='${profileLink}?trk=profile-badge'>LinkedIn badge</a></div>`);
-            LIRenderAll();                        
-            let uploadPhoto;
-            let uploadCompanyLogo;
-            setTimeout(function(){
-              if (!$(".LI-name").length > 0) {
-                  console.log("Failed to load badge. Database and Storage not updated.");
-              } else {
-                  //LinkedIn badge info
-                  if ($(".LI-profile-pic").length>0) photoURL = $(".LI-profile-pic").attr("src");
-                  
-                  if ($(".LI-field-icon").length>0) companyLogo = $(".LI-field-icon").attr("src");
-
-                  // checking if users photoURL in the database is valid
-                  if (photoURL && doc.data().photoURL !== photoURL && !/ghost/gi.test(photoURL)) { // global, case-insensitive regex test
-                    firebase.firestore().collection("members").doc(doc.id).update({
-                      photoURL: photoURL
-                    });
-                    uploadPhoto = uploadPhotoOnFirebaseStorage(photoURL, doc.id);
-                  } else {
-                    console.log("No need to update photo");
-                  }
-                  // checking if users company_logo in the database is valid
-                  if (companyLogo && doc.data().company_logo !== companyLogo && !/ghost/gi.test(companyLogo)) { // global, case-insensitive regex test
-                    firebase.firestore().collection("members").doc(doc.id).update({
-                      company_logo: companyLogo
-                    });
-                    uploadCompanyLogo = uploadCompanyLogoOnFirebaseStorage(companyLogo, doc.id);
-                    if ($(".LI-field").length>0 && $(".LI-field > img")) { // grabbing the first img tag
-                      companyName = $(".LI-field > img").attr("alt"); // getting the first img tag's alt attribute, which contains the name of the company
-                      if (companyName && doc.data().company !== companyName) {
-                        firebase.firestore().collection("members").doc(doc.id).update({
-                          company: companyName,
-                          company_lower: companyName.toLowerCase()
-                        });
-                      }
-                    }    
-                  } else {
-                    console.log("No need to update company logo.");
-                  }
-
-                  return Promise.all([uploadPhoto, uploadCompanyLogo]).then(() => {
-                    console.log("Completed both storage uploads if it was required");                
-                    $("#LIbadge").remove();
-                    // Create a reference to the file we want to download
-                    var profilePicRef = firebase.storage().ref("images/members/" + doc.id + "/profile_picture/" + doc.id + "_profile-picture");
-                    // Get the download URL
-                    profilePicRef.getDownloadURL()
-                    .then((url) => {
-                      firebase.auth().currentUser.updateProfile({
-                        photoURL: url,
-                      })
-                      .then(function() {
-                        console.log("Successfully updated user account photoURL");
-                        $("#user_photo").attr('src', url); // update the navbar user photo with the updated user account photoURL from firebase storage
-                        $(`#${doc.id}_photoURL`).attr('src', url); // update member display photo icon from firebase storage url
-                        if (doc.data().company) {                     
-                          var companyLogoRef = firebase.storage().ref("images/members/" + doc.id + "/company_logo/" + doc.id + "_company-logo");
-                          // Get the download URL
-                          companyLogoRef.getDownloadURL()
-                          .then((url) => {
-                            // Insert url into the companyLogo <img> tag to "download"
-                            $(`#${doc.id}_companyLogo`).attr('src', url); // update member display company logo from firebase storage url
-                          })
-                          .catch((error) => {
-                            // A full list of error codes is available at
-                            // https://firebase.google.com/docs/storage/web/handle-errors
-                            console.log("Company logo does not exist in the storage. Default logo will be used");
-                          });
-                        }
-                      })
-                      .catch(function(error) {
-                        console.log(error);
-                        console.log("Error updating user account photoURL for ", doc.id);
-                      });
-                    })
-                    .catch((error) => {
-                      // A full list of error codes is available at
-                      // https://firebase.google.com/docs/storage/web/handle-errors
-                      console.log("Profile Pic does not exist in the storage. Default photo will be used user account photoURL");
-                    });
-                  })
-                  .catch(err => {
-                    console.log(err);
-                  });
-              }
-            }, 700); // if there are issues with valid profile links not loading the badge, try increasing this timeout            
+          var profilePicRef = firebase.storage().ref("images/members/" + doc.id + "/profile_picture/" + doc.id + "_profile-picture");
+          // Get the download URL
+          profilePicRef.getDownloadURL()
+          .then((url) => {
+            firebase.auth().currentUser.updateProfile({
+              photoURL: url,
+            })
+            .then(function() {
+              console.log("Successfully updated user account photoURL");
+              $("#user_photo").attr('src', url); // update the navbar user photo with the updated user account photoURL from firebase storage
+              $(`#${doc.id}_photoURL`).attr('src', url); // update member display photo icon from firebase storage url
+            })
+            .catch(function(error) {
+              console.log(error);
+              console.log("Error updating user account photoURL for ", doc.id);
+            });
+          })
+          .catch((error) => {
+            // A full list of error codes is available at
+            // https://firebase.google.com/docs/storage/web/handle-errors
+            console.log("Profile Pic does not exist in the storage. Default photo will be used user account photoURL");
+          });
         }
 
         formDynamic["current_address"] = doc.data().current_address;
@@ -625,6 +608,23 @@ function profile() {
   console.log("Nav profile.html");
   window.location.href = "profile.html";
 }
+
+// To get the profile parameter 
+function getUrlParameter(sParam) {
+  var sPageURL = window.location.search.substring(1),
+      sURLVariables = sPageURL.split('&'),
+      sParameterName,
+      i;
+
+  for (i = 0; i < sURLVariables.length; i++) {
+      sParameterName = sURLVariables[i].split('=');
+
+      if (sParameterName[0] === sParam) {
+          return typeof sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+      }
+  }
+  return false;
+};
 
 // Promise function, will resolve if the profile picture is uploaded properly on firebase storage
 function uploadPhotoOnFirebaseStorage(url, uid) {
@@ -690,9 +690,11 @@ function uploadCompanyLogoOnFirebaseStorage(url, uid) {
   });
 }
 
-/* load members */
-function loadMembers(querySnapshot) {
-  if (querySnapshot.docs.length > 0) {
+/** load members 
+* @param singleProfileLoad (boolean) true in case of loading single profile from URL parameter ?profile=PROFILE_ID
+*/
+function loadMembers(querySnapshot, singleProfileLoad = false) {
+  if (querySnapshot.docs.length > 0 || singleProfileLoad) {
     last_read_doc = querySnapshot.docs[querySnapshot.docs.length - 1];
     querySnapshot.forEach(function(doc) {
       // doc.data() is never undefined for query doc snapshots

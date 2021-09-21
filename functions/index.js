@@ -271,12 +271,22 @@ exports.token = functions.https.onRequest((req, res) => {
             date_signedin: Date.now()
           };
 
+          var photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png';
+          if (userResults.profilePicture && userResults.profilePicture['displayImage~'] && userResults.profilePicture['displayImage~'].elements[0] && userResults.profilePicture['displayImage~'].elements[0].identifiers[0] && userResults.profilePicture['displayImage~'].elements[0].identifiers[0].identifier) {
+            photoURL = userResults.profilePicture['displayImage~'].elements[0].identifiers[0].identifier;
+          }
+
+          var emailAddress = 'connect@globalnl.com';
+          if (userEmail && userEmail.elements[0] && userEmail.elements[0]['handle~'] && userEmail.elements[0]['handle~']['emailAddress']) {
+            emailAddress = userEmail.elements[0]['handle~']['emailAddress'];
+          }
+
           // Create a Firebase account and get the Custom Auth Token.
           return createFirebaseAccount(
             "00LI_" + userResults.id,
             member.first_name + ' ' + member.last_name,
-            userResults.profilePicture['displayImage~'].elements[0].identifiers[0].identifier,//userResults.pictureUrl,
-            userEmail.elements[0]['handle~']['emailAddress']
+            photoURL,//userResults.pictureUrl,
+            emailAddress
           ).then(firebaseToken => {
               // Serve an HTML page that signs the user in and updates the user profile.
               return res.jsonp({

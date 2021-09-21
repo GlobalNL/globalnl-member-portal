@@ -27,11 +27,17 @@ $(document).ready(function() {
     if (profileUsername) { // true if user comes back properly from their linkedin page
     // start loading the linkedin badge
       $("#linkedin").val('https://www.linkedin.com/in/' + profileUsername);
-      $("#LIbadge").html(`<div class='LI-profile-badge'  data-version='v1' data-size='large' data-locale='en_US' data-type='horizontal' data-theme='light' data-vanity='${profileUsername}'><a class='LI-simple-link' style="display: none" href='https://www.linkedin.com/in/${profileUsername}?trk=profile-badge'>LinkedIn badge</a></div>`);
+      $("#LIbadge").html(`<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="${profileUsername}" data-version="v1"></div>`);
       LIRenderAll();
       $("#badgeLoading").hide();
       setTimeout(function(){
-        if (!$(".LI-name").length > 0) {
+        var cssElements=document.getElementsByTagName("link")
+        for (var i=cssElements.length; i>=0; i--) {
+          if (cssElements[i] && cssElements[i].getAttribute("href")!=null && cssElements[i].getAttribute("href").indexOf("licdn")!=-1) {
+            cssElements[i].parentNode.removeChild(cssElements[i]);
+          }
+        }
+        if (!$(".profile-badge__content").length > 0) {
           $("#LIbadge").html(`<div class="badge-error-message">Error loading LinkedIn profile!</div><div class="badge-error-message">Please check your profile link.</div>`)
         }
       }, 1000); // if there are issues with valid profile links not loading the badge, try increasing this timeout
@@ -342,15 +348,15 @@ $("#submitButton").click(function(event) {
   }
 
   //LinkedIn badge info
-  if ($(".LI-profile-pic").length>0) member.photoURL = $(".LI-profile-pic").attr("src");
-  if ($(".LI-title").length>0) member.headline = $(".LI-title").text();
+  if ($(".artdeco-entity-image.artdeco-entity-image--circle-4.profile-badge__content-profile-image").length>0) member.photoURL = $(".artdeco-entity-image.artdeco-entity-image--circle-4.profile-badge__content-profile-image").attr("src");
+  if ($(".profile-badge__content-profile-headline").length>0) member.headline = $(".profile-badge__content-profile-headline").text();
   member.company = '';
   member.company_lower = '';
-  if ($(".LI-field").length>0 && $(".LI-field > img")) { // grabbing the first img tag
-    member.company = $(".LI-field > img").attr("alt"); // getting the first img tag's alt attribute, which contains the name of the company
+  if ($(".profile-badge__content-profile-company-school-info").length>0 && $(".profile-badge__content-profile-company-school-info-field > a:first-of-type")) { // getting the first a tag
+    member.company = $(".profile-badge__content-profile-company-school-info > a:first-of-type").text(); // getting the first a tag's text, which contains the name of the company
     member.company_lower = member.company.toLowerCase();
   }
-  if ($(".LI-field-icon").length>0) member.company_logo = $(".LI-field-icon").attr("src");
+  // if ($(".LI-field-icon").length>0) member.company_logo = $(".LI-field-icon").attr("src"); // old badge script which used to show company logo was stored like this
 
   var private_data = {};
 
@@ -527,14 +533,20 @@ function initApp() {
 
     		if (userData["linkedin_profile"] != null) {
           $("#linkedin").val(userData["linkedin_profile"]);
-          $("#LIbadge").html(`<div class='LI-profile-badge'  data-version='v1' data-size='large' data-locale='en_US' data-type='horizontal' data-theme='light' data-vanity='${userData["linkedin_profile"].substring(userData["linkedin_profile"].indexOf('/in/')+4).replace('/','')}'><a class='LI-simple-link' style="display: none" href='${userData["linkedin_profile"]}?trk=profile-badge'>LinkedIn badge</a></div>`);
+          $("#LIbadge").html(`<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="${userData["linkedin_profile"].substring(userData["linkedin_profile"].indexOf('/in/')+4).replace('/','')}" data-version="v1"></div>`);
           LIRenderAll();
           $("#badgeLoading").hide();
           setTimeout(function(){
-            if (!$(".LI-name").length > 0) {
+            var cssElements=document.getElementsByTagName("link")
+            for (var i=cssElements.length; i>=0; i--) {
+              if (cssElements[i] && cssElements[i].getAttribute("href")!=null && cssElements[i].getAttribute("href").indexOf("licdn")!=-1) {
+                cssElements[i].parentNode.removeChild(cssElements[i]);
+              }
+            }        
+            if (!$(".profile-badge__content").length > 0) {
               $("#LIbadge").html(`<div class="badge-error-message">Error loading LinkedIn profile!</div><div class="badge-error-message">Please check your profile link.</div>`)
             }
-          }, 600); // if there are issues with valid profile links not loading the badge, try increasing this timeout
+          }, 1000); // if there are issues with valid profile links not loading the badge, try increasing this timeout
         }
 
         // Privacy
@@ -704,14 +716,20 @@ $('#linkedin').change(() => {
   $("#badgeLoading").show();
   let profileLink = $("#linkedin").val();
   let vanityName = profileLink.substring(profileLink.indexOf('/in/')+4).replace('/','');
-  $("#LIbadge").html(`<div class='LI-profile-badge'  data-version='v1' data-size='large' data-locale='en_US' data-type='horizontal' data-theme='light' data-vanity='${vanityName}'><a class='LI-simple-link' style='display: none' href='${profileLink}?trk=profile-badge'>LinkedIn badge</a></div>`);
+  $("#LIbadge").html(`<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="${vanityName}" data-version="v1"></div>`);
   LIRenderAll();
   $("#badgeLoading").hide();
-  setTimeout(function(){
-    if (!$(".LI-name").length > 0) {
+  setTimeout(function() {
+    var cssElements=document.getElementsByTagName("link")
+    for (var i=cssElements.length; i>=0; i--) {
+      if (cssElements[i] && cssElements[i].getAttribute("href")!=null && cssElements[i].getAttribute("href").indexOf("licdn")!=-1) {
+        cssElements[i].parentNode.removeChild(cssElements[i]);
+      }
+    }        
+    if (!$(".profile-badge__content").length > 0) {
       $("#LIbadge").html(`<div class="badge-error-message">Error loading LinkedIn profile!</div><div class="badge-error-message">Please check your profile link.</div>`)
     }
-  }, 600); // if there are issues with valid profile links not loading the badge, try increasing this timeout
+  }, 1000); // if there are issues with valid profile links not loading the badge, try increasing this timeout
 });
 
 /*****************************************************
