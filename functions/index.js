@@ -53,6 +53,15 @@ const OAUTH_SCOPES = ["r_liteprofile", "r_emailaddress"];
 var member = {};
 var private_data = {};
 
+// [START express and related modules import]
+const express = require('express');
+const app = express();
+//const cors = require('cors')({origin: true});
+//app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
+// [END import]
+
 /**
  * Sends welcome email to new users
  */
@@ -458,3 +467,69 @@ exports.dbSet = functions.pubsub.schedule('11 * * * *')
       console.log("Completing function for records between " + startLetter + " and " + endLetter);
     });
 });
+
+//Creating a '/login' api route that will handle adding Google/Apple accounts
+app.post('/login', (req, res) => {
+  const token = req.body.token;
+  console.log(token);
+  
+  admin.auth().verifyIdToken(token)
+    .then((decodedToken) => {
+      const uid = decodedToken.uid;
+      const email = decodedToken.email;
+      const name = decodedToken.name || '';
+      const split = name.split(' ');
+      const firstName = split[0] || '';
+      const lastName = split[1] || '';
+      console.log(uid);
+      console.log(email);
+      console.log(name);
+      checkUser(email, uid, name, firstName, lastName);
+      res.send('success');
+    })
+    .catch(error => {
+      console.log(error);
+    });
+});
+
+// function that checks if a user exists in the database
+function checkUser(email, userid, name, firstName, lastName) {
+
+  // first we check if user id exists
+  db.collection("private_data").doc(userid).get()
+    .then(user => {
+      if (user.exists) {
+        console.log("the UID exists");
+      } else {
+        // then we check if the email exists
+        const query = db.collection("private_data").where('email', '==', email);
+        query.get()
+          .then((querySnapshot) => {
+            if (querySnapshot.docs.length > 0) {
+              console.log("the email exists")
+            } else if (querySnapshot.docs.length <= 0) {
+              db.collection("private_data").doc(userid).set({
+                email: email,
+                status: false,
+              }, {merge: true});
+              console.log('user has been added!')
+              db.collection("members").doc(userid).set({
+                display_name: name,
+                first_name: firstName,
+                last_name: lastName,
+                status: false,
+              }, {merge: true});
+            }
+          })
+          .catch(error => {
+            console.log(error)
+          })
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
+// Export the express app as an HTTP Cloud Function
+exports.app = functions.https.onRequest(app);

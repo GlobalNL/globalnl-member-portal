@@ -5,6 +5,7 @@
 
 // Object with last returned database query to use for pagination
 var last_read_doc = 0;
+const db = firebase.firestore();
 
 // Track status of request to add more member profiles during scroll
 // Set to true after request is completed to avoid initiating a new query before the first one is returned
@@ -28,6 +29,7 @@ searchButtonStates["company"] = false;
 const settings = { timestampsInSnapshots: true };
 firebase.firestore().settings(settings);
 var fbi = firebase.firestore().collection("members");
+var fpd = firebase.firestore().collection("members");
 //var uid = firebase.auth().currentUser.uid;
 
 function renderWithUser(user) {
@@ -875,7 +877,9 @@ function loadMembers(querySnapshot) {
     <a href="${memberFields.linkedin_profile}" target="___blank">View LinkedIn Profile</a>
     </h5>
     <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
-  </div>
+    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
+    </div>
 </div>
 </div>`;
         console.log(
@@ -923,6 +927,8 @@ function loadMembers(querySnapshot) {
     <a href="${memberFields.linkedin_profile}" target="___blank">View LinkedIn Profile</a>
     </h5>
     <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
+    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
   </div>
 </div>
 </div>`;
@@ -972,6 +978,8 @@ function loadMembers(querySnapshot) {
       <a href="${memberFields.linkedin_profile}" target="___blank">View LinkedIn Profile</a>
       </h5>
       <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
       </div>
       </div>
       </div>`;
@@ -1016,6 +1024,8 @@ function loadMembers(querySnapshot) {
       <a href="${memberFields.linkedin_profile}" target="___blank">View LinkedIn Profile</a>
       </h5>
       <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
       </div>
       </div>
       </div>`;
@@ -1061,6 +1071,53 @@ function loadMembers(querySnapshot) {
       <td style="padding-right:0.5rem"> ${memberFields.bio}</td>
       </tr></table></h5>
       <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
+      </div>
+      </div>
+      </div>`;
+        console.log(
+          "Loaded profile: " +
+            firstName +
+            "  - no LinkedIn profile - " +
+            doc.id
+        );
+      }
+      else if (memberFields.status == false)
+      {
+        showAdminButton();
+        memberDomString = `<div class="col-auto p-1 card-col">
+      <div class="card card-gnl">
+      <div>
+      <div class="card-header card-header-gnl">
+      <span class="fas fa-gnl-head">
+      <img id="${memberFields.public_uid}_photoURL" src="${photoURL}" class="gnl-user-photo"></span>
+      <div class="card-profile-title">
+      ${firstName} ${lastName}
+      <div class="card-header-headline">
+      ${memberFields.headline}</div>
+      </div>
+      </div>
+      <div class="munLogoAdder" style="visibility: ${vis};"><img src="assets/MUN_Logo_Pantone_Border_Small.jpg" alt="MUN LOGO"></div>
+      </div>
+      <div class="card-body card-body-gnl">
+      <h5 class="card-title"><span class="fas fa-globalnl fa-industry"></span>${
+      cardIndustry
+      }</h5>
+      <h5 class="card-title"><span class="fas fa-globalnl fa-map-marker-alt"></span>${
+      memberFields.currentAddress
+      }</h5>
+      <h5 class="card-title"><span class="fas fa-globalnl fa-anchor"></span>${
+      memberFields.hometown
+      }</h5>
+      <h5 class="card-title"><table><tr>
+      <td class="fas fa-globalnl fa-info-circle"></td>
+      <td style="padding-right:0.5rem"> ${memberFields.bio}</td>
+      </tr></table></h5>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+      <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
+
       </div>
       </div>
       </div>`;
@@ -1098,7 +1155,9 @@ function loadMembers(querySnapshot) {
       memberFields.hometown
     }</h5>
     <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="adminRedirect();"> Edit Profile as Administrator </button>
-  </div>
+    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="removeUser()"> Remove </button>
+    <button id="${memberFields.public_uid}" type="button" class="btn btn-light adminButton" onclick="approveUser()"> Add </button>
+    </div>
 </div>
 </div>`;
         console.log(
@@ -2140,4 +2199,38 @@ function loadActiveMembers() {
   fbi.orderBy("date_signedin", "desc").get().then((querySnapshot) => {
     loadMembers(querySnapshot);
   });
+}
+
+function loadNewMembers(){
+  console.log("searching for unapproved users...")
+  $("#members-list").empty();
+  $("#preloader").show();
+  fpd.where("status", "==", false).get().then((querySnapshot => {
+    loadMembers(querySnapshot);
+  }));
+}
+
+function removeUser() {
+  sessionStorage.setItem("uid", event.target.id);
+  const uid = sessionStorage.getItem("uid");
+  db.collection('private_data').doc(uid).delete()
+  .then(
+    db.collection('members').doc(uid).delete()
+  )
+  .then(
+    alert("User has been removed!")
+  )
+  .finally(
+    location.reload()
+  )
+  .catch
+}
+
+function approveUser() {
+  sessionStorage.setItem("uid", event.target.id);
+  const uid = sessionStorage.getItem("uid");
+  db.collection('private_data').doc(uid).update({status: true})
+  db.collection('members').doc(uid).update({status: true});
+  alert("User has been approved");
+  location.reload();
 }

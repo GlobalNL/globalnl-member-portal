@@ -92,8 +92,15 @@
 			   to continue to the Global NL Members Portal
 			  </p>  
 			  </div>
-			  <img class="mx-auto d-block" alt="Sign in with LinkedIn" id="sign-in-button" onClick="gnl.auth.loginLinkedIn();return false;" 
-			  src="assets/Sign-In-Small---Default.png" onmouseover="this.src='assets/Sign-In-Small---Hover.png'" onmouseout="this.src='assets/Sign-In-Small---Default.png'"/>
+			  <img class="mx-auto d-block" alt="Sign in with LinkedIn" id="sign-in-button" onClick="gnl.auth.loginLinkedIn();return false;"
+			  src="assets/Sign-in-Large---Hover.png" onmouseover="this.src='assets/Sign-in-Large---Active.png'" onmouseout="this.src = 'assets/Sign-in-Large---Hover.png'"/>
+			  &nbsp;
+			  <img class="mx-auto d-block" id="sign-in-button" onClick="appleLogin()"
+			  src="assets/Apple-Button--Normal.png" onmouseover="this.src='assets/Apple-Button--Pressed.png'" onmouseout="this.src = 'assets/Apple-Button--Normal.png'"/>
+			  &nbsp;
+			  <img class="mx-auto d-block" id="sign-in-button" onClick="googleLogin()"
+			  src="assets/google_signin_normal.png" onmouseover="this.src='assets/google_signin_pressed.png'" onmouseout="this.src = 'assets/google_signin_normal.png'"/>
+			  &nbsp;
         <div class="w-100 m-2"></div>
       <div id="loginPage_text" class="text-center">
 			  <small class="font-italic text-muted">
@@ -264,6 +271,27 @@
 						<img id="badgeLoading" src="assets/preloader.gif"/>
 						<!-- LI badge html goes here -->
 					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="input-group col-xs-12 col-lg-10">
+					<label class="col-xs-4 col-lg-5 col-form-label">How did you hear about us?</label>
+						<span class="input-group-prepend">
+						<button class="btn btn-outline-secondary border-right-0 border btn-gnl" type="button">
+							<i class="fa fa-users"></i>
+						</button>
+					  </span>
+					<select id="information" class="form-control py-2 border-left-0 border selectpicker">
+						
+						<option selected disabled hidden></option>
+						<option value="LinkedIn">LinkedIn</option>
+						<option value="Twitter">Twitter</option>
+						<option value="Facebook">Facebook</option></option>
+						<option value="Instagram">Instagram</option>
+						<option value="News article">News article</option>
+						<option value="Friend or colleague">Friend or colleague</option>
+						<option value="Other">Other</option>				
+					</select>
 				</div>
 			</div>
 </div>

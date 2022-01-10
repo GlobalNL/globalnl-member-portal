@@ -321,7 +321,7 @@ $("#submitButton").click(function(event) {
   member.bio = $("#bio").val();
   //To store industry to database
   member.industry = $("#industry").val();
-
+  member.information = $("#information :selected").text();
   //member.linkedin_profile = $("#linkedin").val();
   var url = $("#linkedin").val();
   if(/linkedin.com\/in\//.test(url)){
