@@ -116,12 +116,7 @@ img{
   if(fbtoken){
     console.log('token found attempting login');
     firebase.auth().signInWithCustomToken(fbtoken).then(function() {
-      if (window.location.href.startsWith("https://memberstest.globalnl.com")) {
-        window.location.href  = 'https://memberstest.globalnl.com/index.html';
-      }
-      else {
-        window.location.href  = 'https://members.globalnl.com/index.html';
-      }
+      window.location.href = window.location.origin + '/index.html'
     });
   }
   else {

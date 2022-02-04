@@ -82,7 +82,7 @@ passport.use(
     {
       clientID: functions.config().linkedin.client_id,
       clientSecret: functions.config().linkedin.client_secret,
-      callbackURL: (functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/auth/linkedin/callback` : `https://members.globalnl.com/auth/linkedin/callback`,
+      callbackURL: `${functions.config().project.base_url}/auth/linkedin/callback`,
       scope: ["r_emailaddress", "r_liteprofile"],
     },
     (
@@ -370,8 +370,8 @@ app.get(
 app.get(
   "/auth/linkedin/callback",
   passport.authenticate("linkedin", {
-    //successRedirect: "https://memberstest.globalnl.com/linkedin-test",
-    failureRedirect: (functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/index.html` : `https://members.globalnl.com/index.html`,
+    //successRedirect: `${functions.config().project.base_url}/linkedin-test`,
+    failureRedirect: `${functions.config().project.base_url}/index.html`,
     session: false
   }),
   function(req, res){
@@ -395,7 +395,7 @@ app.get(
     //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
     return createFirebaseAccount(emailAddress, "00LI_" + req.user.id, displayName, firstName, lastName, photoURL)
     .then((firebaseToken)=>{
-      return res.redirect(((functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/login.html?token=` : `https://members.globalnl.com/login.html?token=`) + firebaseToken);
+      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
     });
 });
 
@@ -431,9 +431,9 @@ function checkUser(email, uid, displayName, firstName, lastName, photoURL) {
     .then((querySnapshot) => {
       if (querySnapshot.docs.length > 0) {
 
-        console.log('email ' + email + ' found in member database updating uid ' + querySnapshot.docs[0].id + '. logged in uid: ' + uid);
+        console.log('email ' + email + ' found in member database updating database uid ' + querySnapshot.docs[0].id + ' (even though logged in uid is ' + uid + ')');
         
-        return db.collection("members").doc(uid).set({
+        return db.collection("members").doc(querySnapshot.docs[0].id).set({
           display_name: displayName,
           first_name: firstName,
           last_name: lastName,
@@ -445,7 +445,7 @@ function checkUser(email, uid, displayName, firstName, lastName, photoURL) {
 
         console.log('email ' + email + ' not found in member database adding uid ' + uid);
 
-        const privateDatabaseTask = db.collection("private_data").doc(querySnapshot.docs[0].id).set({
+        const privateDatabaseTask = db.collection("private_data").doc(uid).set({
           email: email,
           status: false,
         }, {merge: true});

@@ -6,18 +6,38 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [ {
-      "source": "/login",
-      "function": "app"
-    },{
-      "source": "/auth/linkedin",
-      "function": "app"
-    },{
-      "source": "/auth/linkedin/callback",
-      "function": "app"
-    },{
-      "source": "/linkedin-test",
-      "function": "app"
-    } ]
+    "rewrites": [
+      {
+        "source": "/login",
+        "function": "app"
+      },
+      {
+        "source": "/auth/linkedin",
+        "function": "app"
+      },
+      {
+        "source": "/auth/linkedin/callback",
+        "function": "app"
+      },
+      {
+        "source": "/linkedin-test",
+        "function": "app"
+      }
+    ]
+  },
+  "emulators": {
+    "hosting": {
+      "host": "localhost",
+      "port": 5002
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true
+    },
+    "auth": {
+      "port": 9099
+    }
   }
 }
