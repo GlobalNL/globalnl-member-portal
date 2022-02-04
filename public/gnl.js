@@ -4,11 +4,26 @@ window.gnl = (function() {
   const auth = {};
 
   auth.loginLinkedIn = function() {
-    window.open(
-      "login.html",
-      "targetWindow",
-      "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=585,height=600"
-    );
+    if (window.location.href.startsWith("https://memberstest.globalnl.com")) {
+      window.location.href = 'https://memberstest.globalnl.com/auth/linkedin';
+      /*
+      window.open(
+        "https://memberstest.globalnl.com/auth/linkedin",
+        "targetWindow",
+        "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=585,height=600"
+      );
+      */
+    }
+    else {
+      window.location.href = 'https://members.globalnl.com/auth/linkedin';
+      /*
+      window.open(
+        "https://members.globalnl.com/auth/linkedin",
+        "targetWindow",
+        "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=585,height=600"
+      );
+      */
+    }
   };
 
   auth.logout = function() {

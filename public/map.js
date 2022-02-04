@@ -11,8 +11,7 @@ var members = [];
  * Firestore
  ******************************************************/
 
-const settings = { timestampsInSnapshots: true };
-firebase.firestore().settings(settings);
+firebase.firestore().settings({ timestampsInSnapshots: true });
 var fbi = firebase.firestore().collection("members");
 var uid;
 var memberDocRef;

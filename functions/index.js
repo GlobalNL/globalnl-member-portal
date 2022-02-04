@@ -47,11 +47,22 @@ var db = admin.firestore();
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);
 
-//const OAUTH_SCOPES = ["r_liteprofile"];
-const OAUTH_SCOPES = ["r_liteprofile", "r_emailaddress"];
-
 var member = {};
 var private_data = {};
+
+const passport = require("passport");
+const LinkedInStrategy = require("passport-linkedin-oauth2").Strategy;
+
+/*
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+*/
+
 
 // [START express and related modules import]
 const express = require('express');
@@ -60,7 +71,32 @@ const app = express();
 //app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-// [END import]
+app.use(express.urlencoded({ extended: false }));
+//const session = require('express-session')
+//app.use(session({ secret: functions.config().session.secret }));
+app.use(passport.initialize());
+//app.use(passport.session());
+
+passport.use(
+  new LinkedInStrategy(
+    {
+      clientID: functions.config().linkedin.client_id,
+      clientSecret: functions.config().linkedin.client_secret,
+      callbackURL: (functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/auth/linkedin/callback` : `https://members.globalnl.com/auth/linkedin/callback`,
+      scope: ["r_emailaddress", "r_liteprofile"],
+    },
+    (
+      accessToken,
+      refreshToken,
+      profile,
+      done
+    ) => {
+      process.nextTick(() => {
+        return done(null, profile);
+      });
+    }
+  )
+);
 
 /**
  * Sends welcome email to new users
@@ -81,11 +117,14 @@ exports.sendWelcomeEmail = functions.auth.user().onCreate(user => {
 			)
 			.then((response)=>{
 				console.log(email + ' added to Mailchimp');
-				console.log(response);
+				//console.log(response);
 			}));
     return Promise.all(promiseArray)
 	.catch(err => {
-		console.error(err);
+    if(err.detail)
+		  console.error(err.detail);
+    else
+      console.error('Mailchimp error');
 	});
 });
 
@@ -169,141 +208,7 @@ Reply to this email to respond, your email address will be viewable by the recip
   });
 });
 
-/**
- * Creates a configured LinkedIn API Client instance.
- * @param requestFromApp boolean indicating if the request is coming from the mobile application to set callbackUrl accordingly.
- */
-function linkedInClient(requestFromApp) {
-  // LinkedIn OAuth 2 setup
-  // TODO: Configure the `linkedin.client_id` and `linkedin.client_secret` Google Cloud environment variables.
-  // Determines which project is being used and sets callback url accordingly
 
-  let callbackUrl = "https://members.globalnl.com/login.html";  
-  if (functions.config().project.name == "globalnl-members") {
-    if (requestFromApp)
-      callbackUrl = `https://app.globalnl.com/login.html`;
-  }
-  else if (functions.config().project.name == "globalnl-database-test") {
-    if (requestFromApp) {
-      callbackUrl = `https://apptest.globalnl.com/login.html`;
-    } else {
-      callbackUrl = `https://memberstest.globalnl.com/login.html`;
-    }
-  }
-  else {
-    console.log("project id is invalid: " + functions.config().project.name);
-  }
-
- return require("node-linkedin")(
-   functions.config().linkedin.client_id,
-   functions.config().linkedin.client_secret,
-   callbackUrl);
-}
-
-/**
- * Redirects the User to the LinkedIn authentication consent screen. ALso the 'state' cookie is set for later state
- * verification.
- */
-exports.redirect = functions.https.onRequest((req, res) => {  
-  const { headers } = req;
-  const userAgent = headers["user-agent"];
-  console.log(userAgent);
-
-  let Linkedin;
-
-  if (userAgent.indexOf('gonative') > -1) { // condition true if app usage is coming from the mobile application
-    Linkedin = linkedInClient(true); // callbackUrl will be set as the mobile app specific Url
-  } else {
-    Linkedin = linkedInClient(false); // callbackUrl will be set as the non-mobile app specific Url
-  }
-
-  cookieParser()(req, res, () => {
-    const state = req.cookies.state || crypto.randomBytes(20).toString("hex");
-    //console.log('Setting verification state:', state);
-    //res.setHeader('Cache-Control', 'private');
-    res.cookie("state", state.toString(), {
-      maxAge: 3600000,
-      secure: true,
-      httpOnly: true
-    });
-    Linkedin.auth.authorize(res, OAUTH_SCOPES, state.toString());
-  });
-  console.log("redirect complete");
-});
-
-/**
- * Exchanges a given LinkedIn auth code passed in the 'code' URL query parameter for a Firebase auth token.
- * The request also needs to specify a 'state' query parameter which will be checked against the 'state' cookie.
- * The Firebase custom auth token is sent back in a JSONP callback function with function name defined by the
- * 'callback' query parameter.
- */
-exports.token = functions.https.onRequest((req, res) => {
-  const { headers } = req;
-  const userAgent = headers["user-agent"];
-  console.log(userAgent);
-
-  let Linkedin;
-
-  if (userAgent.indexOf('gonative') > -1) { // condition true if app usage is coming from the mobile application       
-    Linkedin = linkedInClient(true); // callbackUrl will be set as the mobile app specific Url
-  } else { 
-    Linkedin = linkedInClient(false); // callbackUrl will be set as the non-mobile app specific Url
-  }
-
-  try {
-    console.log('Received state via query: ', req.query.state);
-    Linkedin.auth.authorize(OAUTH_SCOPES, req.query.state); // Makes sure the state parameter is set
-    console.log('Received auth code:', req.query.code);
-    Linkedin.auth.getAccessToken(
-      res,
-      req.query.code,
-      req.query.state,
-      (error, results) => {
-        if (error) {
-          throw error;
-        }
-        const linkedin = Linkedin.init(results.access_token);
-        linkedin.people.email((error,userEmail) => {
-          if (error) {
-            throw error;
-          }
-          linkedin.people.me((error, userResults) => {
-            if (error) {
-              throw error;
-            }
-          // We have a LinkedIn access token and the user identity now.
-
-          member = {
-            first_name: userResults.firstName.localized[Object.keys(userResults.firstName.localized)[0]] || "",
-            last_name: userResults.lastName.localized[Object.keys(userResults.lastName.localized)[0]] || "",
-            photoURL: "",
-            date_signedin: Date.now()
-          };
-
-          // Create a Firebase account and get the Custom Auth Token.
-          return createFirebaseAccount(
-            "00LI_" + userResults.id,
-            member.first_name + ' ' + member.last_name,
-            userResults.profilePicture['displayImage~'].elements[0].identifiers[0].identifier,//userResults.pictureUrl,
-            userEmail.elements[0]['handle~']['emailAddress']
-          ).then(firebaseToken => {
-              // Serve an HTML page that signs the user in and updates the user profile.
-              return res.jsonp({
-                token: firebaseToken
-              });
-            });
-          });
-        });
-      }
-    );
-  } catch (error) {
-    console.log("Error in token function, LinkedIn requests, Firebase Account update/creation", error.toString());
-    return res.jsonp({
-      error: error.toString
-    });
-  }
-  //res.setHeader('Cache-Control', 'private');  
-});
 
 /**
  * Creates a Firebase account with the given user profile and returns a custom auth token allowing
@@ -312,15 +217,13 @@ exports.token = functions.https.onRequest((req, res) => {
  *
  * @returns {Promise<string>} The Firebase custom auth token in a promise.
  */
-function createFirebaseAccount(uid, displayName, photoURL, email) {
+function createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL) {
   // Save the access token to the Firebase Realtime Database.
   // Taking out now, if add back replace in Promises at end
   //const databaseTask = admin.database().ref(`/linkedInAccessToken/${uid}`).set(accessToken);
 
-  // Create or update the user account.
-  const userTokenTask = admin
-    .auth()
-    .updateUser(uid, {
+  console.log('Create or update the user account in admin database', email, uid, displayName, firstName, lastName, photoURL);
+  return admin.auth().updateUser(uid, {
       displayName: displayName,
       email: email,
       emailVerified: true
@@ -331,9 +234,7 @@ function createFirebaseAccount(uid, displayName, photoURL, email) {
       if (error.code === "auth/user-not-found") {
         console.log("Attempting to create a new account for: ", email);
         // Create user account
-        const createUserTask = admin
-          .auth()
-          .createUser({
+        return admin.auth().createUser({
             uid: uid,
             displayName: displayName,
             photoURL: photoURL,
@@ -343,48 +244,20 @@ function createFirebaseAccount(uid, displayName, photoURL, email) {
           .catch(function(error) {
             console.log("Error in createUserTask: ", error);
           });
-        return Promise.all([createUserTask]).then(
-          () => {
-            return false;
-          }
-        );
       } // END IF
       throw error;
     }) // END Catch
       .then(() => {
         const token = admin.auth().createCustomToken(uid);
-        
-        console.log("About to write member database record: ", uid);
-
-        private_data.email = email || "";
-
-        console.log(private_data);
-        console.log(member);
-
-        const privateDatabaseTask = db
-          .collection("private_data")
-          .doc(uid)
-          .set(private_data, { merge: true })
-          .catch(function(error) {
-            console.log(error);
-            console.log("Error writing private database properties for ", uid);
-          });
-        const memberDatabaseTask = db
-          .collection("members")
-          .doc(uid)
-          .set(member, { merge: true })
-          .catch(function(error) {
-            console.log(error);
-            console.log("Error writing public database properties for ", uid);
-          });
-          return Promise.all([token, memberDatabaseTask, privateDatabaseTask]).then(
-            () => {
-              // Create a Firebase custom auth token.
-              return token;
-            }
-          );
-        });
-  return userTokenTask; //holds value of token
+        console.log('Create or update member profile in fb database', email, uid, displayName, firstName, lastName, photoURL);
+        return Promise.all([token, checkUser(email, uid, displayName, firstName, lastName, photoURL)]).then(
+          () => {
+            console.log('Firebase custom auth token.');
+            console.log(token);
+            return token;
+          }
+        );
+      });
 }
 
 // Sends a welcome email to the given user.
@@ -471,60 +344,121 @@ exports.dbSet = functions.pubsub.schedule('11 * * * *')
 //Creating a '/login' api route that will handle adding Google/Apple accounts
 app.post('/login', (req, res) => {
   const token = req.body.token;
-  console.log(token);
-  
   admin.auth().verifyIdToken(token)
     .then((decodedToken) => {
       const uid = decodedToken.uid;
       const email = decodedToken.email;
-      const name = decodedToken.name || '';
-      const split = name.split(' ');
-      const firstName = split[0] || '';
-      const lastName = split[1] || '';
-      console.log(uid);
-      console.log(email);
-      console.log(name);
-      checkUser(email, uid, name, firstName, lastName);
-      res.send('success');
+      const displayName = decodedToken.name || '';
+      const nameArray = displayName.split(' ');
+      const firstName = nameArray[0] || '';
+      const lastName = nameArray[1] || '';
+      const photoURL = decodedToken.picture || '';
+      console.log('decoded token: ', email, uid, displayName, firstName, lastName, photoURL);
+      return checkUser(email, uid, displayName, firstName, lastName, photoURL);
     })
+    .then(()=>{res.send('success')})
     .catch(error => {
       console.log(error);
     });
 });
 
-// function that checks if a user exists in the database
-function checkUser(email, userid, name, firstName, lastName) {
+app.get(
+  "/auth/linkedin",
+  passport.authenticate("linkedin", { state: crypto.randomBytes(20).toString("hex") })
+);
 
-  // first we check if user id exists
-  db.collection("private_data").doc(userid).get()
-    .then(user => {
-      if (user.exists) {
-        console.log("the UID exists");
-      } else {
-        // then we check if the email exists
-        const query = db.collection("private_data").where('email', '==', email);
-        query.get()
-          .then((querySnapshot) => {
-            if (querySnapshot.docs.length > 0) {
-              console.log("the email exists")
-            } else if (querySnapshot.docs.length <= 0) {
-              db.collection("private_data").doc(userid).set({
-                email: email,
-                status: false,
-              }, {merge: true});
-              console.log('user has been added!')
-              db.collection("members").doc(userid).set({
-                display_name: name,
-                first_name: firstName,
-                last_name: lastName,
-                status: false,
-              }, {merge: true});
-            }
-          })
-          .catch(error => {
-            console.log(error)
-          })
+app.get(
+  "/auth/linkedin/callback",
+  passport.authenticate("linkedin", {
+    //successRedirect: "https://memberstest.globalnl.com/linkedin-test",
+    failureRedirect: (functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/index.html` : `https://members.globalnl.com/index.html`,
+    session: false
+  }),
+  function(req, res){
+    console.log('/auth/linkedin/callback');
+    //console.log(req.user);
+    let emailAddress = 'connect@globalnl.com';
+    if(req.user.emails && req.user.emails[0] && req.user.emails[0]['value']){
+      emailAddress = req.user.emails[0] && req.user.emails[0]['value'];
+    }
+    var photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png';
+    if(req.user.photos && req.user.photos[2] && req.user.photos[2]['value']){
+      photoURL = req.user.photos[0] && req.user.photos[0]['value'];
+    }
+    else if(req.user.photos && req.user.photos[0] && req.user.photos[0]['value']){
+      photoURL = req.user.photos[0] && req.user.photos[0]['value'];
+    }
+    const displayName = req.user.displayName || '';
+    const nameArray = displayName.split(' ');
+    const firstName = nameArray[0] || '';
+    const lastName = nameArray[1] || '';
+    //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
+    return createFirebaseAccount(emailAddress, "00LI_" + req.user.id, displayName, firstName, lastName, photoURL)
+    .then((firebaseToken)=>{
+      return res.redirect(((functions.config().project.name === "globalnl-database-test") ? `https://memberstest.globalnl.com/login.html?token=` : `https://members.globalnl.com/login.html?token=`) + firebaseToken);
+    });
+});
+
+app.get("/linkedin-test", (req, res) => {
+  if (req.user) {
+    const name = req.user.name.givenName;
+    const family = req.user.name.familyName;
+    const photo = req.user.photos[0].value;
+    const email = req.user.emails[0].value;
+    console.log('/linkedin-test');
+    //console.log(req.user);
+    res.send(
+      `<center style="font-size:140%"> <p>User is Logged In </p>
+      <p>Name: ${name} ${family} </p>
+      <p> Linkedn Email: ${email} </p>
+      <img src="${photo}"/>
+      </center>
+      `
+    )
+  } else {
+    res.send(`<center style="font-size:160%"> <p> Home Page </p>
+    <p>User is not Logged In</p>
+    <img style="cursor:pointer;"  onclick="window.location='/auth/linkedin'" src="https://members.globalnl.com/assets/Sign-In-Small---Hover.png"/>
+    </center>
+    `);
+  }
+});
+
+// function that checks if a user exists in the database
+function checkUser(email, uid, displayName, firstName, lastName, photoURL) {
+
+  return db.collection("private_data").where('email', '==', email).get()
+    .then((querySnapshot) => {
+      if (querySnapshot.docs.length > 0) {
+
+        console.log('email ' + email + ' found in member database updating uid ' + querySnapshot.docs[0].id + '. logged in uid: ' + uid);
+        
+        return db.collection("members").doc(uid).set({
+          display_name: displayName,
+          first_name: firstName,
+          last_name: lastName,
+          photoURL: photoURL,
+          status: false,
+        }, {merge: true});
+
+      } else if (querySnapshot.docs.length <= 0) {
+
+        console.log('email ' + email + ' not found in member database adding uid ' + uid);
+
+        const privateDatabaseTask = db.collection("private_data").doc(querySnapshot.docs[0].id).set({
+          email: email,
+          status: false,
+        }, {merge: true});
+        
+        const memberDatabaseTask = db.collection("members").doc(uid).set({
+          display_name: displayName,
+          first_name: firstName,
+          last_name: lastName,
+          photoURL: photoURL,
+          status: false,
+        }, {merge: true});
       }
+      return Promise.all([memberDatabaseTask, privateDatabaseTask])
     })
     .catch(error => {
       console.log(error)

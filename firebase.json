@@ -9,6 +9,15 @@
     "rewrites": [ {
       "source": "/login",
       "function": "app"
-    }]
+    },{
+      "source": "/auth/linkedin",
+      "function": "app"
+    },{
+      "source": "/auth/linkedin/callback",
+      "function": "app"
+    },{
+      "source": "/linkedin-test",
+      "function": "app"
+    } ]
   }
 }

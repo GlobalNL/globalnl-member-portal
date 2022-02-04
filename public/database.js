@@ -1,6 +1,5 @@
 const firestore = firebase.firestore();
-const settings = { timestampsInSnapshots: true };
-firestore.settings(settings);
+firestore.settings({ timestampsInSnapshots: true });
 
 var memberdata = {};
 function fillTable() {
