@@ -252,8 +252,7 @@ function createFirebaseAccount(email, uid, displayName, firstName, lastName, pho
         console.log('Create or update member profile in fb database', email, uid, displayName, firstName, lastName, photoURL);
         return Promise.all([token, checkUser(email, uid, displayName, firstName, lastName, photoURL)]).then(
           () => {
-            console.log('Firebase custom auth token.');
-            console.log(token);
+            console.log('Returning Firebase custom auth token for', uid);
             return token;
           }
         );
@@ -457,8 +456,9 @@ function checkUser(email, uid, displayName, firstName, lastName, photoURL) {
           photoURL: photoURL,
           status: false,
         }, {merge: true});
+        
+        return Promise.all([memberDatabaseTask, privateDatabaseTask])
       }
-      return Promise.all([memberDatabaseTask, privateDatabaseTask])
     })
     .catch(error => {
       console.log(error)
