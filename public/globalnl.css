@@ -493,3 +493,10 @@ input:checked + .slider:before {
     max-width: 415.796px;
   }
 }
+.gnl-format{
+  background-color: #102557;
+  height:84px;
+}
+.pad{
+  padding-top: 100 px;
+}
