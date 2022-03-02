@@ -53,7 +53,7 @@ body {
 }
 #mainPage {
   display: none;
-  padding: 60px 10px 20px 10px;
+  padding: 102px 10px 20px 10px;
 }
 
 /* Fix double up on navbar */
@@ -494,9 +494,5 @@ input:checked + .slider:before {
   }
 }
 .gnl-format{
-  background-color: #102557;
-  height:84px;
-}
-.pad{
-  padding-top: 100 px;
+  background-color: #102557 !important;
 }
