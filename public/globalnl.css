@@ -53,7 +53,7 @@ body {
 }
 #mainPage {
   display: none;
-  padding: 60px 10px 20px 10px;
+  padding: 102px 10px 20px 10px;
 }
 
 /* Fix double up on navbar */
@@ -75,14 +75,20 @@ body {
 @media only screen and (min-width: 450px) {
   .card-gnl {
   width: 364px !important;
+  min-height: 0px;
+  }
+  .card-header-gnl {
+    min-height: 0px;
   }
 }
 
 @media only screen and (max-width: 768px) {
+  /*
   #sign-in-button, #sign-in-button-loginModal {
     width: 234px;
     height: 32px;
   }
+  */
   #display_name_label {
     display: none;
   }
@@ -173,7 +179,7 @@ h1.welcome-text {
 
 .card-gnl {
   min-width: 350px !important;
-  min-height: 0px;
+  min-height: 380px;
   margin: 0px;
 }
 
@@ -187,6 +193,7 @@ h1.welcome-text {
   margin-bottom: 0;
   padding: 1rem;
   display: flex;
+  min-height: 110px;
 }
 
 .card-header-headline {
@@ -485,4 +492,7 @@ input:checked + .slider:before {
   #LIbadge {
     max-width: 415.796px;
   }
+}
+.gnl-format{
+  background-color: #102557 !important;
 }

@@ -24,6 +24,7 @@
 
   		<!-- Custom CSS -->
 	<link rel="stylesheet" href="globalnl.css">
+	<link rel="stylesheet" href="linkedin.css">
 
 	<style>
     tr.odd{
@@ -36,7 +37,12 @@
 
   <header>
       <!-- Fixed navbar -->
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top gnl-format">
+		<a class="navbar-brand" href="http://www.globalnl.com/">
+			<img src="https://uploads-ssl.webflow.com/60b5359825508481bba88ffd/60e4ac068d1de784d4bec7b7_GlobalNL_Logo_White.svg" loading="lazy" width="164" alt="" class="image-21">
+			<!--<img src="/assets/GlobalNL-Logo-Icon-White.png" width="30" height="30" class="d-inline-block align-top" alt="">
+			Global NL-->
+			</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -86,7 +92,7 @@
 		</div>
 	</div>
 
-	<div id="mainPage" style="padding-top: 4rem">
+	<div id="mainPage" style="padding-top: 100px">
 	    <button id="fillTable" class="btn btn-primary" onclick="fillTable();" style="margin: 15px;"> Load Database Report </button>
 
 	    <table id="DBTable" class="stripe" style="width: 100%">

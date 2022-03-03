@@ -4,11 +4,14 @@ window.gnl = (function() {
   const auth = {};
 
   auth.loginLinkedIn = function() {
+    window.location.href = window.location.origin + '/auth/linkedin';
+    /*
     window.open(
-      "login.html",
+      window.location.origin + "/auth/linkedin",
       "targetWindow",
       "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=585,height=600"
     );
+    */
   };
 
   auth.logout = function() {
@@ -50,6 +53,7 @@ window.gnl = (function() {
         </a>
         <a class="nav-link" href="database.html"><span class="fas fa-globalnl fa-table"></span><span>Database</span></a>
         <button class="btn btn-primary" style="margin: 0.5rem;" onclick="loadActiveMembers();">Recently Active</button>
+        <button class="btn btn-primary" style="margin: 0.5rem;" onclick="loadNewMembers();">New Requests</button>
       </div>
     </div>
   </li>
