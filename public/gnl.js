@@ -13,6 +13,16 @@ window.gnl = (function() {
     );
     */
   };
+  auth.loginGoogle = function() {
+    window.location.href = window.location.origin + '/auth/google';
+    /*
+    window.open(
+      window.location.origin + "/auth/google",
+      "targetWindow",
+      "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=585,height=600"
+    );
+    */
+  };
 
   auth.logout = function() {
     firebase

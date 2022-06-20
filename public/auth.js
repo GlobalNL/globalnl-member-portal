@@ -1,17 +1,3 @@
-// setting up google login 
-function googleLogin(){
-    let provider = new firebase.auth.GoogleAuthProvider()
-    console.log('login btn called')
-    firebase.auth().signInWithPopup(provider).then(res => {
-        const id_token = res.credential.idToken;
-        console.log('here is the user token =>' + id_token)
-        console.log('about to send token to the backend');
-        checkAuthState()
-    }).catch(e => {
-        console.log(e)
-    })
-}
-
 // setting up apple login
 function appleLogin(){
     if (!firebase.auth().currentUser){

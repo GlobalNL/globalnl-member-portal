@@ -52,8 +52,8 @@ var private_data = {};
 
 const passport = require("passport");
 const LinkedInStrategy = require("passport-linkedin-oauth2").Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
-/*
 passport.serializeUser((user, done) => {
   done(null, user);
 });
@@ -61,8 +61,6 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
-*/
-
 
 // [START express and related modules import]
 const express = require('express');
@@ -72,10 +70,10 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
-//const session = require('express-session')
-//app.use(session({ secret: functions.config().session.secret }));
+const session = require('express-session')
+app.use(session({ secret: functions.config().session.secret }));
 app.use(passport.initialize());
-//app.use(passport.session());
+app.use(passport.session());
 
 passport.use(
   new LinkedInStrategy(
@@ -97,6 +95,24 @@ passport.use(
     }
   )
 );
+
+passport.use(
+  new GoogleStrategy(
+  {
+    clientID: functions.config().google.client_id,
+    clientSecret: functions.config().google.client_secret,
+    callbackURL: `${functions.config().project.base_url}/oauth2/redirect/google`,
+    scope: [
+      'profile',
+      'email'
+    ],
+    state: true,
+    passReqToCallback: true
+  },
+  function(request, accessToken, refreshToken, profile, done) {
+    return done(null, profile);
+  }
+));
 
 /**
  * Sends welcome email to new users
@@ -235,17 +251,55 @@ function createFirebaseAccount(email, uid, displayName, firstName, lastName, pho
         console.log("Attempting to create a new account for: ", email);
         // Create user account
         return admin.auth().createUser({
-            uid: uid,
-            displayName: displayName,
-            photoURL: photoURL,
-            email: email,
-            emailVerified: true
-          })
-          .catch(function(error) {
-            console.log("Error in createUserTask: ", error);
-          });
-      } // END IF
-      throw error;
+          uid: uid,
+          displayName: displayName,
+          photoURL: photoURL,
+          email: email,
+          emailVerified: true
+        })
+        .catch(function(error) {
+          console.log("Error in createUserTask: ", error);
+          if (error.code === "auth/email-already-exists") {
+            console.log(email, "already exists");
+            const emailArray = email.split('@');
+            const emailName = emailArray[0] || '';
+            const emailProvider = emailArray[1] || '';
+            const newEmail = emailName + '+1234@' + emailProvider;
+            //console.log("Attempting to create a new account for: ", newEmail);
+            return admin.auth().updateUser(uid, {
+              displayName: displayName,
+              email: newEmail,
+              emailVerified: true
+            })
+            .catch(error => {
+              console.log("Error in createUserTask: ", error);
+              if (error.code === "auth/user-not-found") {
+                console.log(newEmail, "already exists");
+                console.log("Attempting to create a new account for: ", newEmail);
+                return admin.auth().createUser({
+                  uid: uid,
+                  displayName: displayName,
+                  photoURL: photoURL,
+                  email: newEmail,
+                  emailVerified: true
+                }
+                )}
+            })
+      }})
+    }
+    else if (error.code === "auth/email-already-exists") {
+      const emailArray = email.split('@');
+      const emailName = emailArray[0] || '';
+      const emailProvider = emailArray[1] || '';
+      const newEmail = emailName + '+1234@' + emailProvider;
+      console.log("Attempting to create a new account for: ", newEmail);
+      return admin.auth().updateUser(uid, {
+        displayName: displayName,
+        email: newEmail,
+        emailVerified: true
+      })
+    } // END IF
+    throw error;
     }) // END Catch
       .then(() => {
         const token = admin.auth().createCustomToken(uid);
@@ -365,6 +419,43 @@ app.get(
   "/auth/linkedin",
   passport.authenticate("linkedin", { state: crypto.randomBytes(20).toString("hex") })
 );
+
+app.get(
+  '/auth/google',
+  passport.authenticate('google', { scope: [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email'
+]
+}),
+function(req, res) {
+  res.redirect(req.session.lastUrl || '/');
+}
+);
+
+app.get(
+  '/oauth2/redirect/google',
+  passport.authenticate('google', {
+    //successRedirect: '/index.html',
+    failureRedirect: `${functions.config().project.base_url}/index.html`,
+    session: false,
+    failureMessage: true
+  }),
+  function(req, res) {
+    //console.log('/oauth2/redirect/google');
+    //console.log(req.user);
+    var uid = req.user.id;
+    var displayName = req.user.displayName;
+    var firstName = req.user.name.givenName;
+    var lastName = req.user.name.familyName;
+    var photoURL = req.user.photos[0].value;
+    var emailAddress = req.user.emails[0].value;
+    //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
+    return createFirebaseAccount(emailAddress, "00GS_" + uid, displayName, firstName, lastName, photoURL)
+    .then((firebaseToken)=>{
+      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
+    });
+    //return res.json({req:req.user});
+});
 
 app.get(
   "/auth/linkedin/callback",

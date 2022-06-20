@@ -12,6 +12,14 @@
         "function": "app"
       },
       {
+        "source": "/auth/google",
+        "function": "app"
+      },
+      {
+        "source": "/oauth2/redirect/google",
+        "function": "app"
+      },
+      {
         "source": "/auth/linkedin",
         "function": "app"
       },
