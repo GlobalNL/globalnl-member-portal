@@ -1,21 +1,3 @@
-// setting up apple login
-function appleLogin(){
-    if (!firebase.auth().currentUser){
-        let provider = new firebase.auth.OAuthProvider('apple.com');
-        provider.addScope('email');
-        provider.addScope('name');
-        firebase.auth().signInWithPopup(provider).then (res => {
-            const user = res.user;
-            const id_token = res.credential.idToken;
-            console.log('here is the user token =>' + id_token);
-            console.log('about to send token to the backend');
-            checkAuthState()
-        }).catch(e => {
-            console.log(e);
-        })
-    }
-}
-
 // setting up POST request to send the id_token to the backend
 function checkAuthState(){
     console.log('id_token has been recieved')

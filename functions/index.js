@@ -17,6 +17,7 @@
 
 const functions = require("firebase-functions");
 const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
 const crypto = require("crypto");
 
 //Mailgun Setup
@@ -53,6 +54,7 @@ var private_data = {};
 const passport = require("passport");
 const LinkedInStrategy = require("passport-linkedin-oauth2").Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const AppleStrategy = require("passport-apple").Strategy;
 
 passport.serializeUser((user, done) => {
   done(null, user);
@@ -65,6 +67,7 @@ passport.deserializeUser((user, done) => {
 // [START express and related modules import]
 const express = require('express');
 const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
 //const cors = require('cors')({origin: true});
 //app.use(cors());
 app.use(express.json());
@@ -114,12 +117,29 @@ passport.use(
   }
 ));
 
+passport.use(
+  new AppleStrategy(
+  {
+    clientID: functions.config().apple.client_id,
+    teamID: functions.config().apple.teamID,
+    keyID: functions.config().apple.keyID,
+    privateKeyLocation: functions.config().apple.key,
+    //callbackURL: `${functions.config().project.base_url}/oauth2/redirect/apple`,
+    callbackURL: functions.config().apple.callback_url,
+    passReqToCallback: true,
+  },
+  function(req, accessToken, refreshToken, idToken, profile, cb) {
+    //return done(null, profile);
+    return cb(null, idToken);
+  }
+));
+
 /**
  * Sends welcome email to new users
  */
 
 exports.sendWelcomeEmail = functions.auth.user().onCreate(user => {
-  const email = user.email; // The email of the user.
+  const email = user.email.replace("+globalnl", "").replace("+gnl", ""); // The email of the user.
   const displayName = user.displayName; // The display name of the user.
   var promiseArray = [];
   promiseArray.push(sendWelcomeEmail(email, displayName));
@@ -233,10 +253,26 @@ Reply to this email to respond, your email address will be viewable by the recip
  *
  * @returns {Promise<string>} The Firebase custom auth token in a promise.
  */
-function createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL) {
+function createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL, provider) {
   // Save the access token to the Firebase Realtime Database.
   // Taking out now, if add back replace in Promises at end
   //const databaseTask = admin.database().ref(`/linkedInAccessToken/${uid}`).set(accessToken);
+
+  const emailArray = email.split('@');
+  const emailName = emailArray[0] || '';
+  const emailProvider = emailArray[1] || '';
+  
+  if (provider === "LI") {
+    uid = "00LI_" + uid;
+  }
+  else if (provider === "GS") {
+    email = emailName + '+globalnl@' + emailProvider;
+    uid = "00GS_" + uid;
+  }
+  else if (provider === "AS") {
+    email = emailName + '+gnl@' + emailProvider;
+    uid = "00AS_" + uid;
+  }
 
   console.log('Create or update the user account in admin database', email, uid, displayName, firstName, lastName, photoURL);
   return admin.auth().updateUser(uid, {
@@ -257,48 +293,8 @@ function createFirebaseAccount(email, uid, displayName, firstName, lastName, pho
           email: email,
           emailVerified: true
         })
-        .catch(function(error) {
-          console.log("Error in createUserTask: ", error);
-          if (error.code === "auth/email-already-exists") {
-            console.log(email, "already exists");
-            const emailArray = email.split('@');
-            const emailName = emailArray[0] || '';
-            const emailProvider = emailArray[1] || '';
-            const newEmail = emailName + '+1234@' + emailProvider;
-            //console.log("Attempting to create a new account for: ", newEmail);
-            return admin.auth().updateUser(uid, {
-              displayName: displayName,
-              email: newEmail,
-              emailVerified: true
-            })
-            .catch(error => {
-              console.log("Error in createUserTask: ", error);
-              if (error.code === "auth/user-not-found") {
-                console.log(newEmail, "already exists");
-                console.log("Attempting to create a new account for: ", newEmail);
-                return admin.auth().createUser({
-                  uid: uid,
-                  displayName: displayName,
-                  photoURL: photoURL,
-                  email: newEmail,
-                  emailVerified: true
-                }
-                )}
-            })
-      }})
-    }
-    else if (error.code === "auth/email-already-exists") {
-      const emailArray = email.split('@');
-      const emailName = emailArray[0] || '';
-      const emailProvider = emailArray[1] || '';
-      const newEmail = emailName + '+1234@' + emailProvider;
-      console.log("Attempting to create a new account for: ", newEmail);
-      return admin.auth().updateUser(uid, {
-        displayName: displayName,
-        email: newEmail,
-        emailVerified: true
-      })
-    } // END IF
+      }
+      // END IF
     throw error;
     }) // END Catch
       .then(() => {
@@ -395,8 +391,16 @@ exports.dbSet = functions.pubsub.schedule('11 * * * *')
 });
 
 //Creating a '/login' api route that will handle adding Google/Apple accounts
-app.post('/login', (req, res) => {
+app.post('/oauth2/redirect/apple',
+express.urlencoded(),
+passport.authenticate('apple', {
+  //successRedirect: '/index.html',
+  failureRedirect: `${functions.config().project.base_url}/index.html`,
+  session: false,
+  failureMessage: true
+}), (req, res) => {
   const token = req.body.token;
+  console.log(token);
   admin.auth().verifyIdToken(token)
     .then((decodedToken) => {
       const uid = decodedToken.uid;
@@ -405,7 +409,9 @@ app.post('/login', (req, res) => {
       const nameArray = displayName.split(' ');
       const firstName = nameArray[0] || '';
       const lastName = nameArray[1] || '';
-      const photoURL = decodedToken.picture || '';
+      //const photoURL = decodedToken.picture || '';
+      const photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png' || '';
+      const provider = "AS";
       console.log('decoded token: ', email, uid, displayName, firstName, lastName, photoURL);
       return checkUser(email, uid, displayName, firstName, lastName, photoURL);
     })
@@ -433,6 +439,15 @@ function(req, res) {
 );
 
 app.get(
+  '/auth/apple',
+  passport.authenticate('apple', {
+}),
+function(req, res) {
+  res.redirect(req.session.lastUrl || '/');
+}
+);
+
+app.get(
   '/oauth2/redirect/google',
   passport.authenticate('google', {
     //successRedirect: '/index.html',
@@ -449,8 +464,9 @@ app.get(
     var lastName = req.user.name.familyName;
     var photoURL = req.user.photos[0].value;
     var emailAddress = req.user.emails[0].value;
+    const provider = "GS";
     //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
-    return createFirebaseAccount(emailAddress, "00GS_" + uid, displayName, firstName, lastName, photoURL)
+    return createFirebaseAccount(emailAddress, uid, displayName, firstName, lastName, photoURL, provider)
     .then((firebaseToken)=>{
       return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
     });
@@ -482,8 +498,9 @@ app.get(
     const nameArray = displayName.split(' ');
     const firstName = nameArray[0] || '';
     const lastName = nameArray[1] || '';
+    const provider = "LI";
     //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
-    return createFirebaseAccount(emailAddress, "00LI_" + req.user.id, displayName, firstName, lastName, photoURL)
+    return createFirebaseAccount(emailAddress, req.user.id, displayName, firstName, lastName, photoURL, provider)
     .then((firebaseToken)=>{
       return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
     });
