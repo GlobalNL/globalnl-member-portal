@@ -8,15 +8,11 @@
     ],
     "rewrites": [
       {
-        "source": "/login",
+        "source": "/auth/linkedin",
         "function": "app"
       },
       {
-        "source": "/auth/apple",
-        "function": "app"
-      },
-      {
-        "source": "/oauth2/redirect/apple",
+        "source": "/auth/linkedin/callback",
         "function": "app"
       },
       {
@@ -24,15 +20,15 @@
         "function": "app"
       },
       {
-        "source": "/oauth2/redirect/google",
+        "source": "/auth/google/callback",
         "function": "app"
       },
       {
-        "source": "/auth/linkedin",
+        "source": "/auth/apple",
         "function": "app"
       },
       {
-        "source": "/auth/linkedin/callback",
+        "source": "/auth/apple/callback",
         "function": "app"
       },
       {

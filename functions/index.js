@@ -19,6 +19,8 @@ const functions = require("firebase-functions");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const crypto = require("crypto");
+const fs = require('fs');
+const path = require('path');
 
 //Mailgun Setup
 const mailgunKey = functions.config().mailgun.key;
@@ -54,7 +56,7 @@ var private_data = {};
 const passport = require("passport");
 const LinkedInStrategy = require("passport-linkedin-oauth2").Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const AppleStrategy = require("passport-apple").Strategy;
+const AppleStrategy = require("@nicokaiser/passport-apple").Strategy;
 
 passport.serializeUser((user, done) => {
   done(null, user);
@@ -73,10 +75,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
-const session = require('express-session')
-app.use(session({ secret: functions.config().session.secret }));
 app.use(passport.initialize());
-app.use(passport.session());
 
 passport.use(
   new LinkedInStrategy(
@@ -84,9 +83,9 @@ passport.use(
       clientID: functions.config().linkedin.client_id,
       clientSecret: functions.config().linkedin.client_secret,
       callbackURL: `${functions.config().project.base_url}/auth/linkedin/callback`,
-      scope: ["r_emailaddress", "r_liteprofile"],
+      scope: ["r_emailaddress", "r_liteprofile"]
     },
-    (
+    async (
       accessToken,
       refreshToken,
       profile,
@@ -101,38 +100,47 @@ passport.use(
 
 passport.use(
   new GoogleStrategy(
-  {
-    clientID: functions.config().google.client_id,
-    clientSecret: functions.config().google.client_secret,
-    callbackURL: `${functions.config().project.base_url}/oauth2/redirect/google`,
-    scope: [
-      'profile',
-      'email'
-    ],
-    state: true,
-    passReqToCallback: true
-  },
-  function(request, accessToken, refreshToken, profile, done) {
-    return done(null, profile);
-  }
-));
+    {
+      clientID: functions.config().google.client_id,
+      clientSecret: functions.config().google.client_secret,
+      callbackURL: `${functions.config().project.base_url}/auth/google/callback`,
+      scope: ['profile','email']
+    },
+    async (
+      accessToken, 
+      refreshToken, 
+      profile, 
+      done
+    ) => {
+      process.nextTick(() => {
+        return done(null, profile);
+      });
+    }
+  )
+);
 
 passport.use(
   new AppleStrategy(
   {
     clientID: functions.config().apple.client_id,
-    teamID: functions.config().apple.teamID,
-    keyID: functions.config().apple.keyID,
-    privateKeyLocation: functions.config().apple.key,
-    //callbackURL: `${functions.config().project.base_url}/oauth2/redirect/apple`,
-    callbackURL: functions.config().apple.callback_url,
-    passReqToCallback: true,
+    teamID: functions.config().apple.team_id,
+    keyID: functions.config().apple.key_id,
+    key: fs.readFileSync(path.join(__dirname, 'apple-key.p8')),
+    callbackURL: `${functions.config().project.base_url}/auth/apple/callback`,
+    scope: ['name', 'email']
   },
-  function(req, accessToken, refreshToken, idToken, profile, cb) {
-    //return done(null, profile);
-    return cb(null, idToken);
+  async (
+    accessToken, 
+    refreshToken, 
+    profile, 
+    done
+  ) => {
+    process.nextTick(() => {
+      return done(null, profile);
+    });
   }
-));
+)
+);
 
 /**
  * Sends welcome email to new users
@@ -390,88 +398,10 @@ exports.dbSet = functions.pubsub.schedule('11 * * * *')
     });
 });
 
-//Creating a '/login' api route that will handle adding Google/Apple accounts
-app.post('/oauth2/redirect/apple',
-express.urlencoded(),
-passport.authenticate('apple', {
-  //successRedirect: '/index.html',
-  failureRedirect: `${functions.config().project.base_url}/index.html`,
-  session: false,
-  failureMessage: true
-}), (req, res) => {
-  const token = req.body.token;
-  console.log(token);
-  admin.auth().verifyIdToken(token)
-    .then((decodedToken) => {
-      const uid = decodedToken.uid;
-      const email = decodedToken.email;
-      const displayName = decodedToken.name || '';
-      const nameArray = displayName.split(' ');
-      const firstName = nameArray[0] || '';
-      const lastName = nameArray[1] || '';
-      //const photoURL = decodedToken.picture || '';
-      const photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png' || '';
-      const provider = "AS";
-      console.log('decoded token: ', email, uid, displayName, firstName, lastName, photoURL);
-      return checkUser(email, uid, displayName, firstName, lastName, photoURL);
-    })
-    .then(()=>{res.send('success')})
-    .catch(error => {
-      console.log(error);
-    });
-});
-
 app.get(
   "/auth/linkedin",
   passport.authenticate("linkedin", { state: crypto.randomBytes(20).toString("hex") })
 );
-
-app.get(
-  '/auth/google',
-  passport.authenticate('google', { scope: [
-    'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/userinfo.email'
-]
-}),
-function(req, res) {
-  res.redirect(req.session.lastUrl || '/');
-}
-);
-
-app.get(
-  '/auth/apple',
-  passport.authenticate('apple', {
-}),
-function(req, res) {
-  res.redirect(req.session.lastUrl || '/');
-}
-);
-
-app.get(
-  '/oauth2/redirect/google',
-  passport.authenticate('google', {
-    //successRedirect: '/index.html',
-    failureRedirect: `${functions.config().project.base_url}/index.html`,
-    session: false,
-    failureMessage: true
-  }),
-  function(req, res) {
-    //console.log('/oauth2/redirect/google');
-    //console.log(req.user);
-    var uid = req.user.id;
-    var displayName = req.user.displayName;
-    var firstName = req.user.name.givenName;
-    var lastName = req.user.name.familyName;
-    var photoURL = req.user.photos[0].value;
-    var emailAddress = req.user.emails[0].value;
-    const provider = "GS";
-    //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
-    return createFirebaseAccount(emailAddress, uid, displayName, firstName, lastName, photoURL, provider)
-    .then((firebaseToken)=>{
-      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
-    });
-    //return res.json({req:req.user});
-});
 
 app.get(
   "/auth/linkedin/callback",
@@ -484,15 +414,18 @@ app.get(
     console.log('/auth/linkedin/callback');
     //console.log(req.user);
     let emailAddress = 'connect@globalnl.com';
-    if(req.user.emails && req.user.emails[0] && req.user.emails[0]['value']){
-      emailAddress = req.user.emails[0] && req.user.emails[0]['value'];
+    if(req.user.emails && req.user.emails[0] && req.user.emails[0].value){
+      emailAddress = req.user.emails[0] && req.user.emails[0].value;
     }
     var photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png';
-    if(req.user.photos && req.user.photos[2] && req.user.photos[2]['value']){
-      photoURL = req.user.photos[0] && req.user.photos[0]['value'];
+    if(req.user.photos && req.user.photos[2] && req.user.photos[2].value){
+      photoURL = req.user.photos[2].value;
     }
-    else if(req.user.photos && req.user.photos[0] && req.user.photos[0]['value']){
-      photoURL = req.user.photos[0] && req.user.photos[0]['value'];
+    else if(req.user.photos && req.user.photos[1] && req.user.photos[1].value){
+      photoURL = req.user.photos[1].value;
+    }
+    else if(req.user.photos && req.user.photos[0] && req.user.photos[0].value){
+      photoURL = req.user.photos[0].value;
     }
     const displayName = req.user.displayName || '';
     const nameArray = displayName.split(' ');
@@ -502,9 +435,86 @@ app.get(
     //createFirebaseAccount(email, uid, displayName, firstName, lastName, photoURL)
     return createFirebaseAccount(emailAddress, req.user.id, displayName, firstName, lastName, photoURL, provider)
     .then((firebaseToken)=>{
-      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}`);
+      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=li`);
     });
 });
+
+app.get(
+  '/auth/google',
+  passport.authenticate('google', { scope: [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email'
+    ]
+  })
+);
+
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    //successRedirect: '/index.html',
+    failureRedirect: `${functions.config().project.base_url}/index.html`,
+    session: false
+  }),
+  function(req, res) {
+    var uid = req.user.id;
+    var emailAddress = 'connect@globalnl.com';
+    if(req.user.emails && req.user.emails[0] && req.user.emails[0].value){
+      emailAddress = req.user.emails[0].value;
+    }
+    var firstName = (req.user.name && req.user.name.givenName) ? req.user.name.givenName : '';
+    var lastName = (req.user.name && req.user.name.familyName) ? req.user.name.familyName : '';
+    var displayName = req.user.displayName || (firstName + ' ' + lastName);
+    var photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png';
+    if(req.user.photos && req.user.photos[2] && req.user.photos[2].value){
+      photoURL = req.user.photos[2].value;
+    }
+    else if(req.user.photos && req.user.photos[1] && req.user.photos[1].value){
+      photoURL = req.user.photos[1].value;
+    }
+    else if(req.user.photos && req.user.photos[0] && req.user.photos[0].value){
+      photoURL = req.user.photos[0].value;
+    }
+    const provider = "GS";
+    return createFirebaseAccount(emailAddress, uid, displayName, firstName, lastName, photoURL, provider)
+    .then((firebaseToken)=>{
+      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=gs`);
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
+);
+
+app.get(
+  '/auth/apple',
+  passport.authenticate('apple')
+);
+
+app.post(
+  '/auth/apple/callback',
+  express.urlencoded({ extended: false }),
+  passport.authenticate('apple', {
+    //successRedirect: '/index.html',
+    failureRedirect: `${functions.config().project.base_url}/index.html`,
+    session: false
+  }),
+  function(req, res) {
+    var uid = req.user.id;
+    var firstName = (req.user.name && req.user.name.firstName) ? req.user.name.firstName : ''; // Only provided on first login
+    var lastName = (req.user.name && req.user.name.lastName) ? req.user.name.lastName : ''; // Only provided on first login
+    var displayName = firstName + ' ' + lastName;
+    var emailAddress = req.user.email || ''; // Only provided on first login
+    var photoURL = 'https://members.globalnl.com/assets/ghost_person_200x200_v1.png'; // Not provided for Sign-in with Apple
+    const provider = "AS";
+    return createFirebaseAccount(emailAddress, uid, displayName, firstName, lastName, photoURL, provider)
+    .then((firebaseToken)=>{
+      return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=as`);
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
+);
 
 app.get("/linkedin-test", (req, res) => {
   if (req.user) {

@@ -2,6 +2,7 @@
 .DS_Store
 globalnl-database-export.js
 /functions/*service-account.json
+/functions/*.p8
 .vscode
 .firebase
 node_modules
