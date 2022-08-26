@@ -620,6 +620,8 @@ function initApp() {
         console.log("No such document!");
       } else {
         var userData = doc.data();
+        const email = userData["email"];
+        $("#display_email").val(email);
         // Iterate over interests and check respective fields
         if (userData["interests"] != null) {
           for (const [interest, value] of Object.entries(userData.interests)) {

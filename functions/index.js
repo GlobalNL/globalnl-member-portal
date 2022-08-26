@@ -147,7 +147,7 @@ passport.use(
  */
 
 exports.sendWelcomeEmail = functions.auth.user().onCreate(user => {
-  const email = user.email.replace("+globalnl", "").replace("+gnl", ""); // The email of the user.
+  const email = user.email;
   const displayName = user.displayName; // The display name of the user.
   var promiseArray = [];
   promiseArray.push(sendWelcomeEmail(email, displayName));
@@ -265,20 +265,14 @@ function createFirebaseAccount(email, uid, displayName, firstName, lastName, pho
   // Save the access token to the Firebase Realtime Database.
   // Taking out now, if add back replace in Promises at end
   //const databaseTask = admin.database().ref(`/linkedInAccessToken/${uid}`).set(accessToken);
-
-  const emailArray = email.split('@');
-  const emailName = emailArray[0] || '';
-  const emailProvider = emailArray[1] || '';
   
   if (provider === "LI") {
     uid = "00LI_" + uid;
   }
   else if (provider === "GS") {
-    email = emailName + '+globalnl@' + emailProvider;
     uid = "00GS_" + uid;
   }
   else if (provider === "AS") {
-    email = emailName + '+gnl@' + emailProvider;
     uid = "00AS_" + uid;
   }
 
@@ -436,6 +430,12 @@ app.get(
     return createFirebaseAccount(emailAddress, req.user.id, displayName, firstName, lastName, photoURL, provider)
     .then((firebaseToken)=>{
       return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=li`);
+    })
+    .catch(error => {
+      console.log("There has been an error signing into LinkedIn:", error);
+      if (error.code === 'auth/email-already-exists') {
+        return res.redirect(`${functions.config().project.base_url}/error.html`);
+      }
     });
 });
 
@@ -480,7 +480,10 @@ app.get(
       return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=gs`);
     })
     .catch(error => {
-      console.log(error);
+      console.log("There has been an error signing into Google:", error);
+      if (error.code === 'auth/email-already-exists') {
+        return res.redirect(`${functions.config().project.base_url}/error.html`);
+      }
     });
   }
 );
@@ -511,7 +514,10 @@ app.post(
       return res.redirect(`${functions.config().project.base_url}/login.html?token=${firebaseToken}&provider=as`);
     })
     .catch(error => {
-      console.log(error);
+      console.log("There has been an error signing into Apple:", error);
+      if (error.code === 'auth/email-already-exists') {
+        return res.redirect(`${functions.config().project.base_url}/error.html`);
+      }
     });
   }
 );

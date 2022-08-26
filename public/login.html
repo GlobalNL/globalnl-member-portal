@@ -23,9 +23,9 @@ img{
 }
 
 .linkedin-image {
-    background-image: url(assets/linkedin.svg);
-    height: 100px;
-    width: 100px;
+    background-image: none;
+    height: 144px;
+    width: 144px;
     margin: 0 auto 32px;
     transform: translate(0,0);
     opacity: 1;
@@ -89,9 +89,9 @@ img{
   <body>
 
 <div class="container">
-  <div class="linkedin-image"></div>
+  <div class="linkedin-image" id="linkedin-image"></div>
   <div class="line">
-    <div class="inner"></div>
+    <div class="inner" id="line-inner"></div>
   </div>
 </div>
 
@@ -110,6 +110,20 @@ img{
   function getURLParameter(name) {
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) ||
         [null, ''])[1].replace(/\+/g, '%20')) || null;
+  }
+
+  var provider = getURLParameter('provider');
+  if(provider=='li'){
+    document.getElementById("linkedin-image").style.backgroundImage="url(assets/linkedin.svg)";
+    document.getElementById("line-inner").style.background="#0077B5";
+  }
+  else if(provider=='gs'){
+    document.getElementById("linkedin-image").style.backgroundImage="url(assets/google.svg)";
+    document.getElementById("line-inner").style.background="#3367D6";
+  }
+  else if(provider=='as'){
+    document.getElementById("linkedin-image").style.backgroundImage="url(assets/apple.svg)";
+    document.getElementById("line-inner").style.background="#000000";
   }
 
   var fbtoken = getURLParameter('token');
